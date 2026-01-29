@@ -261,12 +261,25 @@
     /**
      * Start the survey
      */
-    function startSurvey() {
+    async function startSurvey() {
         if (isTransitioning) return;
 
         console.log('Starting survey...');
         stopSlideshow();
         answers = {};
+
+        // Start session - server sets HttpOnly cookie automatically
+        try {
+            const response = await fetch(`${API_BASE}/api/session`, {
+                credentials: 'include'  // Include cookies in request
+            });
+            const data = await response.json();
+            if (data.success) {
+                console.log('Session started (cookie set by server)');
+            }
+        } catch (error) {
+            console.error('Failed to start session:', error);
+        }
 
         // Show header, footer, progress bar, progress text
         if (surveyHeader) surveyHeader.classList.remove('hidden');
@@ -382,8 +395,9 @@
         try {
             const response = await fetch(`${API_BASE}/api/survey`, {
                 method: 'POST',
+                credentials: 'include',  // Include cookies (HttpOnly session)
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     questions: answers,

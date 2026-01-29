@@ -5,12 +5,18 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const PDFDocument = require('pdfkit');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // JWT Secret
 const JWT_SECRET = process.env.ADMIN_SECRET || 'bkpm-survey-secret-key-2024';
+
+// Rate limiting storage (in-memory)
+const rateLimitStore = new Map();
+const RATE_LIMIT_WINDOW = 10 * 60 * 1000; // 10 minutes
+const RATE_LIMIT_MAX = 5; // Max 5 submissions per window
 
 // MySQL Connection Pool
 let pool;
@@ -95,8 +101,12 @@ async function ensureAdminUser() {
 
 // Middleware
 app.set('trust proxy', true); // Trust Nginx proxy
-app.use(cors());
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Helper function to get real client IP behind proxy
@@ -133,6 +143,87 @@ function authMiddleware(req, res, next) {
     }
 }
 
+// Session token middleware for survey protection (Full Protection)
+function sessionMiddleware(req, res, next) {
+    const clientIp = getClientIp(req);
+
+    // 1. RATE LIMITING - Check if IP exceeded limit
+    const now = Date.now();
+    const ipData = rateLimitStore.get(clientIp) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
+
+    // Reset if window expired
+    if (now > ipData.resetTime) {
+        ipData.count = 0;
+        ipData.resetTime = now + RATE_LIMIT_WINDOW;
+    }
+
+    if (ipData.count >= RATE_LIMIT_MAX) {
+        const retryAfter = Math.ceil((ipData.resetTime - now) / 1000);
+        console.log('[RATE_LIMIT] Blocked:', clientIp, 'Retry after:', retryAfter, 'seconds');
+        return res.status(429).json({
+            success: false,
+            error: `Terlalu banyak request. Coba lagi dalam ${Math.ceil(retryAfter / 60)} menit.`,
+            retryAfter
+        });
+    }
+
+    // 2. ORIGIN/REFERER CHECK - Must come from browser with valid origin
+    const origin = req.headers.origin;
+    const referer = req.headers.referer;
+    const host = req.headers.host;
+
+    // Check if request has valid origin (browsers send this, curl doesn't by default)
+    const validOrigin = origin && (
+        origin.includes(host) ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1')
+    );
+    const validReferer = referer && (
+        referer.includes(host) ||
+        referer.includes('localhost') ||
+        referer.includes('127.0.0.1')
+    );
+
+    if (!validOrigin && !validReferer) {
+        console.log('[SECURITY] Blocked - No valid Origin/Referer:', { origin, referer, host, ip: clientIp });
+        return res.status(403).json({
+            success: false,
+            error: 'Request harus dari browser. Akses API langsung tidak diizinkan.'
+        });
+    }
+
+    // 3. SESSION TOKEN - Check HttpOnly cookie
+    const token = req.cookies.survey_session;
+
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            error: 'Session tidak valid. Silakan mulai survey dari awal.'
+        });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded.type !== 'survey_session') {
+            throw new Error('Invalid token type');
+        }
+
+        // Update rate limit count (only after all checks pass)
+        ipData.count++;
+        rateLimitStore.set(clientIp, ipData);
+
+        req.sessionData = decoded;
+        next();
+    } catch (error) {
+        console.log('[SESSION] Invalid token:', error.message);
+        res.clearCookie('survey_session');
+        return res.status(401).json({
+            success: false,
+            error: 'Session expired. Silakan mulai survey dari awal.'
+        });
+    }
+}
+
 // =====================================================
 // HEALTH CHECK
 // =====================================================
@@ -154,11 +245,46 @@ app.get('/health', async (req, res) => {
 });
 
 // =====================================================
-// SURVEY ENDPOINTS (Public Kiosk)
+// SURVEY ENDPOINTS (Protected with Session Token)
 // =====================================================
 
-// Submit survey (from kiosk)
-app.post('/api/survey', async (req, res) => {
+// Get session token for survey (called when user starts survey)
+// Sets HttpOnly cookie - token is NOT visible to JavaScript, preventing theft
+app.get('/api/session', (req, res) => {
+    const ipAddress = getClientIp(req);
+
+    const token = jwt.sign(
+        {
+            type: 'survey_session',
+            ip: ipAddress,
+            createdAt: new Date().toISOString()
+        },
+        JWT_SECRET,
+        { expiresIn: '10m' }
+    );
+
+    // Set HttpOnly cookie - secure, not accessible via JS
+    res.cookie('survey_session', token, {
+        httpOnly: true,         // Not accessible via JavaScript
+        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+        sameSite: 'strict',     // Prevent CSRF
+        maxAge: 10 * 60 * 1000  // 10 minutes
+    });
+
+    console.log('[SESSION] New survey session created:', {
+        ip: ipAddress,
+        timestamp: new Date().toISOString()
+    });
+
+    res.json({
+        success: true,
+        message: 'Session started',
+        expiresIn: '10 minutes'
+    });
+});
+
+// Submit survey (from kiosk) - PROTECTED with session token
+app.post('/api/survey', sessionMiddleware, async (req, res) => {
     const { questions } = req.body;
 
     if (!questions || typeof questions !== 'object') {
