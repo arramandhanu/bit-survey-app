@@ -108,152 +108,26 @@
     <div class="progress-bar hidden" id="progressBar">
         <div class="progress-fill" id="progressFill"></div>
     </div>
-    <!-- Question 1: Kecepatan Pelayanan -->
-    <section class="survey-step" id="step-1">
-        <div class="step-content">
-            <h2 class="question-title">Bagaimana kecepatan pelayanan kami?</h2>
-            <p class="question-subtitle">Pilih salah satu penilaian</p>
-
-            <div class="rating-grid">
-                <button class="rating-option" data-question="q1" data-value="sangat_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Star-Struck.png"
-                        alt="Sangat Cepat" class="option-emoji">
-                    <span class="option-label green">SANGAT CEPAT</span>
-                </button>
-                <button class="rating-option" data-question="q1" data-value="cukup_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Slightly%20Smiling%20Face.png"
-                        alt="Cukup Cepat" class="option-emoji">
-                    <span class="option-label orange">CUKUP CEPAT</span>
-                </button>
-                <button class="rating-option" data-question="q1" data-value="kurang_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Worried%20Face.png"
-                        alt="Kurang Cepat" class="option-emoji">
-                    <span class="option-label red">KURANG CEPAT</span>
-                </button>
+    <!-- Dynamic Questions Container -->
+    <div id="questionsContainer">
+        <!-- Questions will be loaded dynamically from API -->
+        <section class="survey-step" id="step-loading">
+            <div class="step-content">
+                <div class="welcome-icon">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 80px; color: #0F2E5C;"></i>
+                </div>
+                <h2 class="question-title">Memuat pertanyaan...</h2>
             </div>
-        </div>
-    </section>
-
-    <!-- Question 2: Keramahan Petugas -->
-    <section class="survey-step" id="step-2">
-        <div class="step-content">
-            <h2 class="question-title">Bagaimana keramahan petugas kami?</h2>
-            <p class="question-subtitle">Pilih salah satu penilaian</p>
-
-            <div class="rating-grid">
-                <button class="rating-option" data-question="q2" data-value="sangat_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Smiling%20Face%20with%20Heart-Eyes.png"
-                        alt="Sangat Ramah" class="option-emoji">
-                    <span class="option-label green">SANGAT RAMAH</span>
-                </button>
-                <button class="rating-option" data-question="q2" data-value="cukup_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Slightly%20Smiling%20Face.png"
-                        alt="Cukup Ramah" class="option-emoji">
-                    <span class="option-label orange">CUKUP RAMAH</span>
-                </button>
-                <button class="rating-option" data-question="q2" data-value="kurang_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Unamused%20Face.png"
-                        alt="Kurang Ramah" class="option-emoji">
-                    <span class="option-label red">KURANG RAMAH</span>
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Question 3: Kejelasan Informasi -->
-    <section class="survey-step" id="step-3">
-        <div class="step-content">
-            <h2 class="question-title">Apakah informasi yang diberikan jelas?</h2>
-            <p class="question-subtitle">Pilih salah satu penilaian</p>
-
-            <div class="rating-grid">
-                <button class="rating-option" data-question="q3" data-value="sangat_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Nerd%20Face.png"
-                        alt="Sangat Jelas" class="option-emoji">
-                    <span class="option-label green">SANGAT JELAS</span>
-                </button>
-                <button class="rating-option" data-question="q3" data-value="cukup_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Thinking%20Face.png"
-                        alt="Cukup Jelas" class="option-emoji">
-                    <span class="option-label orange">CUKUP JELAS</span>
-                </button>
-                <button class="rating-option" data-question="q3" data-value="kurang_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Confused%20Face.png"
-                        alt="Kurang Jelas" class="option-emoji">
-                    <span class="option-label red">KURANG JELAS</span>
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Question 4: Fasilitas -->
-    <section class="survey-step" id="step-4">
-        <div class="step-content">
-            <h2 class="question-title">Bagaimana kondisi fasilitas kami?</h2>
-            <p class="question-subtitle">Pilih salah satu penilaian</p>
-
-            <div class="rating-grid">
-                <button class="rating-option" data-question="q4" data-value="sangat_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Smiling%20Face%20with%20Sunglasses.png"
-                        alt="Sangat Baik" class="option-emoji">
-                    <span class="option-label green">SANGAT BAIK</span>
-                </button>
-                <button class="rating-option" data-question="q4" data-value="cukup_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Slightly%20Smiling%20Face.png"
-                        alt="Cukup Baik" class="option-emoji">
-                    <span class="option-label orange">CUKUP BAIK</span>
-                </button>
-                <button class="rating-option" data-question="q4" data-value="kurang_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Disappointed%20Face.png"
-                        alt="Kurang Baik" class="option-emoji">
-                    <span class="option-label red">KURANG BAIK</span>
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Question 5: Kepuasan Keseluruhan -->
-    <section class="survey-step" id="step-5">
-        <div class="step-content">
-            <h2 class="question-title">Secara keseluruhan, bagaimana kepuasan Anda?</h2>
-            <p class="question-subtitle">Pilih salah satu penilaian</p>
-
-            <div class="rating-grid">
-                <button class="rating-option" data-question="q5" data-value="sangat_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Star-Struck.png"
-                        alt="Sangat Puas" class="option-emoji">
-                    <span class="option-label green">SANGAT PUAS</span>
-                </button>
-                <button class="rating-option" data-question="q5" data-value="cukup_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Slightly%20Smiling%20Face.png"
-                        alt="Cukup Puas" class="option-emoji">
-                    <span class="option-label orange">CUKUP PUAS</span>
-                </button>
-                <button class="rating-option" data-question="q5" data-value="kurang_baik">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Crying%20Face.png"
-                        alt="Kurang Puas" class="option-emoji">
-                    <span class="option-label red">KURANG PUAS</span>
-                </button>
-            </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
     <!-- Thank You Screen -->
     <section class="survey-step" id="step-complete">
-        <!-- Confetti Container -->
-        <div class="confetti-container" id="confettiContainer"></div>
-        
-        <div class="step-content thank-you-content">
-            <!-- Animated Checkmark -->
-            <div class="success-checkmark">
-                <div class="check-icon">
-                    <span class="icon-line line-tip"></span>
-                    <span class="icon-line line-long"></span>
-                    <div class="icon-circle"></div>
-                    <div class="icon-fix"></div>
-                </div>
+        <div class="step-content">
+            <div class="welcome-icon">
+                <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Hand%20gestures/Folded%20Hands.png"
+                    alt="Thank You" class="large-emoji bounce-animation">
             </div>
-            
             <h2 class="step-title success">Terima Kasih!</h2>
             <p class="step-description">Penilaian Anda telah berhasil disimpan.<br>Masukan Anda sangat berarti bagi
                 kami.</p>

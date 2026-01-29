@@ -148,6 +148,7 @@
 
             tbody.innerHTML = submissions.map(s => {
                 const datetime = new Date(s.created_at).toLocaleString('id-ID', {
+                    timeZone: 'Asia/Jakarta',
                     day: '2-digit',
                     month: 'short',
                     year: 'numeric',
