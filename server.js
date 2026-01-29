@@ -94,9 +94,27 @@ async function ensureAdminUser() {
 }
 
 // Middleware
+app.set('trust proxy', true); // Trust Nginx proxy
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Helper function to get real client IP behind proxy
+function getClientIp(req) {
+    // X-Forwarded-For can contain multiple IPs: "client, proxy1, proxy2"
+    // The real client IP is the first one
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) {
+        const ips = forwarded.split(',').map(ip => ip.trim());
+        return ips[0]; // Return the first (original client) IP
+    }
+    // Fallback to X-Real-IP (set by Nginx)
+    if (req.headers['x-real-ip']) {
+        return req.headers['x-real-ip'];
+    }
+    // Final fallback
+    return req.ip || req.connection?.remoteAddress || 'unknown';
+}
 
 // Auth Middleware
 function authMiddleware(req, res, next) {
@@ -151,7 +169,7 @@ app.post('/api/survey', async (req, res) => {
     }
 
     const timestamp = new Date().toISOString();
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress || 'unknown';
+    const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || 'unknown';
 
     try {
@@ -582,35 +600,96 @@ app.get('/admin/api/reports/pdf', authMiddleware, async (req, res) => {
 
         doc.pipe(res);
 
-        // Header
-        doc.fontSize(20).font('Helvetica-Bold')
-            .text('LAPORAN SURVEY KEPUASAN LAYANAN', { align: 'center' });
-        doc.fontSize(14).font('Helvetica')
-            .text('Kementerian Investasi/BKPM', { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(12)
-            .text(`Periode: ${monthNames[targetMonth - 1]} ${targetYear}`, { align: 'center' });
+        // Colors
+        const primaryColor = '#0F2E5C';
+        const greenColor = '#28A745';
+        const orangeColor = '#F39C12';
+        const redColor = '#DC3545';
+        const grayColor = '#6C757D';
 
-        doc.moveDown(2);
+        // ========== HEADER ==========
+        doc.rect(0, 0, 595, 120).fill(primaryColor);
 
-        // Divider
-        doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-        doc.moveDown();
+        doc.fillColor('#FFFFFF')
+            .fontSize(22).font('Helvetica-Bold')
+            .text('LAPORAN SURVEY KEPUASAN LAYANAN', 50, 35, { align: 'center' });
 
-        // Summary
-        doc.fontSize(14).font('Helvetica-Bold').text('RINGKASAN');
-        doc.moveDown(0.5);
-        doc.fontSize(12).font('Helvetica');
-        doc.text(`Total Responden: ${total}`);
+        doc.fontSize(12).font('Helvetica')
+            .text('Kementerian Investasi/BKPM', 50, 65, { align: 'center' });
 
+        doc.fontSize(14).font('Helvetica-Bold')
+            .text(`Periode: ${monthNames[targetMonth - 1]} ${targetYear}`, 50, 90, { align: 'center' });
+
+        doc.fillColor('#000000');
+        doc.y = 140;
+
+        // ========== SUMMARY CARDS ==========
+        const cardY = doc.y;
+        const cardWidth = 120;
+        const cardHeight = 70;
+        const startX = 50;
+        const gap = 15;
+
+        // Card backgrounds
+        const cards = [
+            { label: 'Total Responden', value: total, color: primaryColor },
+            { label: 'Sangat Puas', value: data.q5_sangat_baik || 0, color: greenColor },
+            { label: 'Cukup Puas', value: data.q5_cukup_baik || 0, color: orangeColor },
+            { label: 'Kurang Puas', value: data.q5_kurang_baik || 0, color: redColor }
+        ];
+
+        cards.forEach((card, i) => {
+            const x = startX + (i * (cardWidth + gap));
+
+            // Card background
+            doc.rect(x, cardY, cardWidth, cardHeight).fill('#F8F9FA');
+
+            // Top colored bar
+            doc.rect(x, cardY, cardWidth, 5).fill(card.color);
+
+            // Value
+            doc.fillColor(card.color)
+                .fontSize(24).font('Helvetica-Bold')
+                .text(card.value.toString(), x, cardY + 20, { width: cardWidth, align: 'center' });
+
+            // Label
+            doc.fillColor(grayColor)
+                .fontSize(9).font('Helvetica')
+                .text(card.label, x, cardY + 48, { width: cardWidth, align: 'center' });
+        });
+
+        doc.y = cardY + cardHeight + 30;
+        doc.fillColor('#000000');
+
+        // ========== SATISFACTION METER ==========
         if (total > 0) {
             const satisfiedPct = Math.round((data.q5_sangat_baik / total) * 100);
-            doc.text(`Tingkat Kepuasan (Sangat Puas): ${satisfiedPct}%`);
+
+            doc.fontSize(12).font('Helvetica-Bold')
+                .text('TINGKAT KEPUASAN KESELURUHAN', 50, doc.y);
+            doc.moveDown(0.5);
+
+            // Progress bar background
+            const barY = doc.y;
+            const barWidth = 495;
+            const barHeight = 20;
+
+            doc.rect(50, barY, barWidth, barHeight).fill('#E9ECEF');
+            doc.rect(50, barY, (barWidth * satisfiedPct / 100), barHeight).fill(greenColor);
+
+            // Percentage text
+            doc.fillColor('#FFFFFF').fontSize(11).font('Helvetica-Bold')
+                .text(`${satisfiedPct}%`, 55, barY + 4);
+
+            doc.fillColor('#000000');
+            doc.y = barY + barHeight + 20;
         }
 
-        doc.moveDown(2);
+        // ========== QUESTIONS TABLE ==========
+        doc.fontSize(12).font('Helvetica-Bold').fillColor(primaryColor)
+            .text('HASIL PER PERTANYAAN', 50, doc.y);
+        doc.moveDown(0.5);
 
-        // Questions
         const questions = [
             { name: 'Kecepatan Pelayanan', prefix: 'q1' },
             { name: 'Keramahan Petugas', prefix: 'q2' },
@@ -619,8 +698,20 @@ app.get('/admin/api/reports/pdf', authMiddleware, async (req, res) => {
             { name: 'Kepuasan Keseluruhan', prefix: 'q5' }
         ];
 
-        doc.fontSize(14).font('Helvetica-Bold').text('HASIL PER PERTANYAAN');
-        doc.moveDown();
+        // Table header
+        const tableY = doc.y;
+        const colWidths = [180, 100, 100, 100];
+        const colX = [50, 230, 330, 430];
+
+        doc.rect(50, tableY, 495, 25).fill(primaryColor);
+        doc.fillColor('#FFFFFF').fontSize(10).font('Helvetica-Bold');
+        doc.text('Pertanyaan', colX[0] + 5, tableY + 7);
+        doc.text('Sangat Baik', colX[1] + 5, tableY + 7);
+        doc.text('Cukup Baik', colX[2] + 5, tableY + 7);
+        doc.text('Kurang Baik', colX[3] + 5, tableY + 7);
+
+        doc.fillColor('#000000');
+        let rowY = tableY + 25;
 
         questions.forEach((q, index) => {
             const sangat = data[`${q.prefix}_sangat_baik`] || 0;
@@ -628,25 +719,49 @@ app.get('/admin/api/reports/pdf', authMiddleware, async (req, res) => {
             const kurang = data[`${q.prefix}_kurang_baik`] || 0;
             const qTotal = sangat + cukup + kurang;
 
-            doc.fontSize(11).font('Helvetica-Bold')
-                .text(`${index + 1}. ${q.name}`);
+            const sangatPct = qTotal > 0 ? Math.round((sangat / qTotal) * 100) : 0;
+            const cukupPct = qTotal > 0 ? Math.round((cukup / qTotal) * 100) : 0;
+            const kurangPct = qTotal > 0 ? Math.round((kurang / qTotal) * 100) : 0;
 
-            if (qTotal > 0) {
-                doc.fontSize(10).font('Helvetica');
-                doc.text(`   • Sangat Baik: ${sangat} (${Math.round((sangat / qTotal) * 100)}%)`);
-                doc.text(`   • Cukup Baik: ${cukup} (${Math.round((cukup / qTotal) * 100)}%)`);
-                doc.text(`   • Kurang Baik: ${kurang} (${Math.round((kurang / qTotal) * 100)}%)`);
-            } else {
-                doc.fontSize(10).font('Helvetica').text('   Tidak ada data');
+            // Alternating row background
+            if (index % 2 === 0) {
+                doc.rect(50, rowY, 495, 25).fill('#F8F9FA');
             }
-            doc.moveDown(0.5);
+
+            doc.fillColor('#000000').fontSize(10).font('Helvetica');
+            doc.text(`${index + 1}. ${q.name}`, colX[0] + 5, rowY + 7);
+
+            doc.fillColor(greenColor).text(`${sangat} (${sangatPct}%)`, colX[1] + 5, rowY + 7);
+            doc.fillColor(orangeColor).text(`${cukup} (${cukupPct}%)`, colX[2] + 5, rowY + 7);
+            doc.fillColor(redColor).text(`${kurang} (${kurangPct}%)`, colX[3] + 5, rowY + 7);
+
+            rowY += 25;
         });
 
-        doc.moveDown(2);
+        // Table border
+        doc.rect(50, tableY, 495, rowY - tableY).stroke('#DEE2E6');
 
-        // Footer
-        doc.fontSize(9).font('Helvetica')
-            .text(`Digenerate pada: ${new Date().toLocaleString('id-ID')}`, { align: 'center' });
+        doc.fillColor('#000000');
+        doc.y = rowY + 30;
+
+        // ========== FOOTER ==========
+        const now = new Date();
+        const jakartaTime = now.toLocaleString('id-ID', {
+            timeZone: 'Asia/Jakarta',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#DEE2E6');
+        doc.moveDown();
+
+        doc.fontSize(9).font('Helvetica').fillColor(grayColor)
+            .text(`Laporan ini digenerate secara otomatis pada: ${jakartaTime} WIB`, { align: 'center' });
+        doc.text('Survey Kepuasan Layanan - Kementerian Investasi/BKPM', { align: 'center' });
 
         doc.end();
     } catch (error) {

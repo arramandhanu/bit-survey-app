@@ -14,6 +14,7 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
+      - TZ=Asia/Jakarta
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=${DB_USER}
