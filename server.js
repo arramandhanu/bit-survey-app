@@ -284,12 +284,29 @@ app.get('/admin/api/dashboard', authMiddleware, async (req, res) => {
             'SELECT COUNT(*) as month FROM surveys WHERE YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())'
         );
 
-        // Satisfaction breakdown
-        const [satisfactionResult] = await pool.query(`
+        // Per-question breakdown
+        const [questionsBreakdown] = await pool.query(`
             SELECT 
-                SUM(CASE WHEN q5_kepuasan = 'sangat_baik' THEN 1 ELSE 0 END) as sangat_baik,
-                SUM(CASE WHEN q5_kepuasan = 'cukup_baik' THEN 1 ELSE 0 END) as cukup_baik,
-                SUM(CASE WHEN q5_kepuasan = 'kurang_baik' THEN 1 ELSE 0 END) as kurang_baik
+                -- Q1 Kecepatan
+                SUM(CASE WHEN q1_kecepatan = 'sangat_baik' THEN 1 ELSE 0 END) as q1_sangat_baik,
+                SUM(CASE WHEN q1_kecepatan = 'cukup_baik' THEN 1 ELSE 0 END) as q1_cukup_baik,
+                SUM(CASE WHEN q1_kecepatan = 'kurang_baik' THEN 1 ELSE 0 END) as q1_kurang_baik,
+                -- Q2 Keramahan
+                SUM(CASE WHEN q2_keramahan = 'sangat_baik' THEN 1 ELSE 0 END) as q2_sangat_baik,
+                SUM(CASE WHEN q2_keramahan = 'cukup_baik' THEN 1 ELSE 0 END) as q2_cukup_baik,
+                SUM(CASE WHEN q2_keramahan = 'kurang_baik' THEN 1 ELSE 0 END) as q2_kurang_baik,
+                -- Q3 Kejelasan
+                SUM(CASE WHEN q3_kejelasan = 'sangat_baik' THEN 1 ELSE 0 END) as q3_sangat_baik,
+                SUM(CASE WHEN q3_kejelasan = 'cukup_baik' THEN 1 ELSE 0 END) as q3_cukup_baik,
+                SUM(CASE WHEN q3_kejelasan = 'kurang_baik' THEN 1 ELSE 0 END) as q3_kurang_baik,
+                -- Q4 Fasilitas
+                SUM(CASE WHEN q4_fasilitas = 'sangat_baik' THEN 1 ELSE 0 END) as q4_sangat_baik,
+                SUM(CASE WHEN q4_fasilitas = 'cukup_baik' THEN 1 ELSE 0 END) as q4_cukup_baik,
+                SUM(CASE WHEN q4_fasilitas = 'kurang_baik' THEN 1 ELSE 0 END) as q4_kurang_baik,
+                -- Q5 Kepuasan
+                SUM(CASE WHEN q5_kepuasan = 'sangat_baik' THEN 1 ELSE 0 END) as q5_sangat_baik,
+                SUM(CASE WHEN q5_kepuasan = 'cukup_baik' THEN 1 ELSE 0 END) as q5_cukup_baik,
+                SUM(CASE WHEN q5_kepuasan = 'kurang_baik' THEN 1 ELSE 0 END) as q5_kurang_baik
             FROM surveys
         `);
 
@@ -304,13 +321,41 @@ app.get('/admin/api/dashboard', authMiddleware, async (req, res) => {
             ORDER BY date ASC
         `);
 
+        const breakdown = questionsBreakdown[0];
+
         res.json({
             success: true,
             data: {
                 total: totalResult[0].total,
                 today: todayResult[0].today,
                 thisMonth: monthResult[0].month,
-                satisfaction: satisfactionResult[0],
+                questions: {
+                    q1_kecepatan: {
+                        sangat_baik: parseInt(breakdown.q1_sangat_baik) || 0,
+                        cukup_baik: parseInt(breakdown.q1_cukup_baik) || 0,
+                        kurang_baik: parseInt(breakdown.q1_kurang_baik) || 0
+                    },
+                    q2_keramahan: {
+                        sangat_baik: parseInt(breakdown.q2_sangat_baik) || 0,
+                        cukup_baik: parseInt(breakdown.q2_cukup_baik) || 0,
+                        kurang_baik: parseInt(breakdown.q2_kurang_baik) || 0
+                    },
+                    q3_kejelasan: {
+                        sangat_baik: parseInt(breakdown.q3_sangat_baik) || 0,
+                        cukup_baik: parseInt(breakdown.q3_cukup_baik) || 0,
+                        kurang_baik: parseInt(breakdown.q3_kurang_baik) || 0
+                    },
+                    q4_fasilitas: {
+                        sangat_baik: parseInt(breakdown.q4_sangat_baik) || 0,
+                        cukup_baik: parseInt(breakdown.q4_cukup_baik) || 0,
+                        kurang_baik: parseInt(breakdown.q4_kurang_baik) || 0
+                    },
+                    q5_kepuasan: {
+                        sangat_baik: parseInt(breakdown.q5_sangat_baik) || 0,
+                        cukup_baik: parseInt(breakdown.q5_cukup_baik) || 0,
+                        kurang_baik: parseInt(breakdown.q5_kurang_baik) || 0
+                    }
+                },
                 trend: trendResult
             }
         });

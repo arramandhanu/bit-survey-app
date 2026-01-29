@@ -95,45 +95,66 @@
 
         <!-- Charts Section -->
         <div class="charts-grid">
-            <!-- Satisfaction Breakdown -->
-            <div class="chart-card">
-                <h3><i class="fas fa-chart-pie"></i> Tingkat Kepuasan</h3>
-                <div class="satisfaction-bars">
-                    <div class="bar-item">
-                        <div class="bar-label">
-                            <span>Sangat Puas</span>
-                            <span id="satisfiedCount">0</span>
-                        </div>
-                        <div class="bar-container green">
-                            <div class="bar-fill" id="satisfiedBar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="bar-item">
-                        <div class="bar-label">
-                            <span>Cukup Puas</span>
-                            <span id="neutralCount">0</span>
-                        </div>
-                        <div class="bar-container orange">
-                            <div class="bar-fill" id="neutralBar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="bar-item">
-                        <div class="bar-label">
-                            <span>Kurang Puas</span>
-                            <span id="unsatisfiedCount">0</span>
-                        </div>
-                        <div class="bar-container red">
-                            <div class="bar-fill" id="unsatisfiedBar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Weekly Trend -->
             <div class="chart-card">
                 <h3><i class="fas fa-chart-line"></i> Trend 7 Hari Terakhir</h3>
                 <div class="trend-chart" id="trendChart">
                     <!-- Trend bars will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Total Summary -->
+            <div class="chart-card">
+                <h3><i class="fas fa-calculator"></i> Ringkasan Total</h3>
+                <div class="summary-grid">
+                    <div class="summary-item green">
+                        <span class="summary-label">Sangat Baik</span>
+                        <span class="summary-value" id="totalSangatBaik">0</span>
+                    </div>
+                    <div class="summary-item orange">
+                        <span class="summary-label">Cukup Baik</span>
+                        <span class="summary-value" id="totalCukupBaik">0</span>
+                    </div>
+                    <div class="summary-item red">
+                        <span class="summary-label">Kurang Baik</span>
+                        <span class="summary-value" id="totalKurangBaik">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Per-Question Breakdown -->
+        <div class="questions-section">
+            <h2><i class="fas fa-list-check"></i> Breakdown Per Pertanyaan</h2>
+            <div class="questions-grid">
+                <!-- Q1 Kecepatan -->
+                <div class="question-card">
+                    <h4>Q1. Kecepatan Pelayanan</h4>
+                    <div class="question-bars" id="q1Bars"></div>
+                </div>
+
+                <!-- Q2 Keramahan -->
+                <div class="question-card">
+                    <h4>Q2. Keramahan Petugas</h4>
+                    <div class="question-bars" id="q2Bars"></div>
+                </div>
+
+                <!-- Q3 Kejelasan -->
+                <div class="question-card">
+                    <h4>Q3. Kejelasan Informasi</h4>
+                    <div class="question-bars" id="q3Bars"></div>
+                </div>
+
+                <!-- Q4 Fasilitas -->
+                <div class="question-card">
+                    <h4>Q4. Fasilitas</h4>
+                    <div class="question-bars" id="q4Bars"></div>
+                </div>
+
+                <!-- Q5 Kepuasan -->
+                <div class="question-card">
+                    <h4>Q5. Kepuasan Keseluruhan</h4>
+                    <div class="question-bars" id="q5Bars"></div>
                 </div>
             </div>
         </div>
@@ -194,26 +215,35 @@
                     document.getElementById('todaySurveys').textContent = data.today.toLocaleString();
                     document.getElementById('monthSurveys').textContent = data.thisMonth.toLocaleString();
 
-                    // Satisfaction rate
-                    const total = (data.satisfaction.sangat_baik || 0) +
-                        (data.satisfaction.cukup_baik || 0) +
-                        (data.satisfaction.kurang_baik || 0);
-                    const rate = total > 0 ? Math.round((data.satisfaction.sangat_baik / total) * 100) : 0;
+                    // Calculate totals across all questions
+                    const questions = data.questions;
+                    let totalSangatBaik = 0;
+                    let totalCukupBaik = 0;
+                    let totalKurangBaik = 0;
+
+                    Object.values(questions).forEach(q => {
+                        totalSangatBaik += q.sangat_baik || 0;
+                        totalCukupBaik += q.cukup_baik || 0;
+                        totalKurangBaik += q.kurang_baik || 0;
+                    });
+
+                    // Update total summary
+                    document.getElementById('totalSangatBaik').textContent = totalSangatBaik;
+                    document.getElementById('totalCukupBaik').textContent = totalCukupBaik;
+                    document.getElementById('totalKurangBaik').textContent = totalKurangBaik;
+
+                    // Satisfaction rate based on Q5
+                    const q5 = questions.q5_kepuasan;
+                    const q5Total = q5.sangat_baik + q5.cukup_baik + q5.kurang_baik;
+                    const rate = q5Total > 0 ? Math.round((q5.sangat_baik / q5Total) * 100) : 0;
                     document.getElementById('satisfactionRate').textContent = rate + '%';
 
-                    // Satisfaction bars
-                    document.getElementById('satisfiedCount').textContent = data.satisfaction.sangat_baik || 0;
-                    document.getElementById('neutralCount').textContent = data.satisfaction.cukup_baik || 0;
-                    document.getElementById('unsatisfiedCount').textContent = data.satisfaction.kurang_baik || 0;
-
-                    if (total > 0) {
-                        document.getElementById('satisfiedBar').style.width =
-                            Math.round((data.satisfaction.sangat_baik / total) * 100) + '%';
-                        document.getElementById('neutralBar').style.width =
-                            Math.round((data.satisfaction.cukup_baik / total) * 100) + '%';
-                        document.getElementById('unsatisfiedBar').style.width =
-                            Math.round((data.satisfaction.kurang_baik / total) * 100) + '%';
-                    }
+                    // Render per-question bars
+                    renderQuestionBars('q1Bars', questions.q1_kecepatan);
+                    renderQuestionBars('q2Bars', questions.q2_keramahan);
+                    renderQuestionBars('q3Bars', questions.q3_kejelasan);
+                    renderQuestionBars('q4Bars', questions.q4_fasilitas);
+                    renderQuestionBars('q5Bars', questions.q5_kepuasan);
 
                     // Trend chart
                     renderTrendChart(data.trend);
@@ -221,6 +251,43 @@
             } catch (error) {
                 console.error('Dashboard error:', error);
             }
+        }
+
+        function renderQuestionBars(containerId, data) {
+            const container = document.getElementById(containerId);
+            const total = data.sangat_baik + data.cukup_baik + data.kurang_baik;
+
+            const getWidth = (value) => total > 0 ? Math.round((value / total) * 100) : 0;
+
+            container.innerHTML = `
+                <div class="qbar-item">
+                    <div class="qbar-label">
+                        <span>Sangat Baik</span>
+                        <span class="qbar-count">${data.sangat_baik}</span>
+                    </div>
+                    <div class="qbar-track">
+                        <div class="qbar-fill green" style="width: ${getWidth(data.sangat_baik)}%"></div>
+                    </div>
+                </div>
+                <div class="qbar-item">
+                    <div class="qbar-label">
+                        <span>Cukup Baik</span>
+                        <span class="qbar-count">${data.cukup_baik}</span>
+                    </div>
+                    <div class="qbar-track">
+                        <div class="qbar-fill orange" style="width: ${getWidth(data.cukup_baik)}%"></div>
+                    </div>
+                </div>
+                <div class="qbar-item">
+                    <div class="qbar-label">
+                        <span>Kurang Baik</span>
+                        <span class="qbar-count">${data.kurang_baik}</span>
+                    </div>
+                    <div class="qbar-track">
+                        <div class="qbar-fill red" style="width: ${getWidth(data.kurang_baik)}%"></div>
+                    </div>
+                </div>
+            `;
         }
 
         function renderTrendChart(trend) {
