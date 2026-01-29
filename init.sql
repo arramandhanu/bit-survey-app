@@ -100,3 +100,32 @@ SELECT
 FROM surveys
 GROUP BY DATE(created_at)
 ORDER BY date DESC;
+
+-- =====================================================
+-- QUESTIONS TABLE - Store customizable survey questions
+-- =====================================================
+CREATE TABLE IF NOT EXISTS questions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    question_key VARCHAR(20) NOT NULL UNIQUE,
+    question_text VARCHAR(500) NOT NULL,
+    question_subtitle VARCHAR(200) DEFAULT 'Pilih salah satu penilaian',
+    option_positive VARCHAR(50) DEFAULT 'SANGAT BAIK',
+    option_neutral VARCHAR(50) DEFAULT 'CUKUP BAIK',
+    option_negative VARCHAR(50) DEFAULT 'KURANG BAIK',
+    display_order INT DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_display_order (display_order),
+    INDEX idx_is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insert default questions
+INSERT INTO questions (question_key, question_text, option_positive, option_neutral, option_negative, display_order) VALUES
+('q1', 'Bagaimana kecepatan pelayanan kami?', 'SANGAT CEPAT', 'CUKUP CEPAT', 'KURANG CEPAT', 1),
+('q2', 'Bagaimana keramahan petugas kami?', 'SANGAT RAMAH', 'CUKUP RAMAH', 'KURANG RAMAH', 2),
+('q3', 'Bagaimana kejelasan informasi yang diberikan?', 'SANGAT JELAS', 'CUKUP JELAS', 'KURANG JELAS', 3),
+('q4', 'Bagaimana kondisi fasilitas kami?', 'SANGAT BAIK', 'CUKUP BAIK', 'KURANG BAIK', 4),
+('q5', 'Secara keseluruhan, bagaimana kepuasan Anda?', 'SANGAT PUAS', 'CUKUP PUAS', 'KURANG PUAS', 5)
+ON DUPLICATE KEY UPDATE question_text = VALUES(question_text);

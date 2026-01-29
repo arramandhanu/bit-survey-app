@@ -316,6 +316,9 @@
     async function submitSurvey() {
         goToStep('complete');
 
+        // Trigger confetti celebration
+        createConfetti();
+
         try {
             const response = await fetch(`${API_BASE}/api/survey`, {
                 method: 'POST',
@@ -341,6 +344,39 @@
 
         // Start countdown to restart
         startCountdown();
+    }
+
+    /**
+     * Create confetti celebration effect
+     */
+    function createConfetti() {
+        const container = document.getElementById('confettiContainer');
+        if (!container) return;
+
+        container.innerHTML = ''; // Clear previous confetti
+
+        const colors = ['#28A745', '#F39C12', '#DC3545', '#0F2E5C', '#17a2b8', '#6f42c1'];
+        const shapes = ['circle', 'square', 'triangle'];
+        const confettiCount = 100;
+
+        for (let i = 0; i < confettiCount; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = `confetti ${shapes[Math.floor(Math.random() * shapes.length)]}`;
+
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.backgroundColor = color;
+            confetti.style.color = color;
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.animationDelay = Math.random() * 2 + 's';
+            confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+
+            container.appendChild(confetti);
+        }
+
+        // Clear confetti after animation
+        setTimeout(() => {
+            container.innerHTML = '';
+        }, 5000);
     }
 
     /**

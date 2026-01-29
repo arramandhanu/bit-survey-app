@@ -990,3 +990,311 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+/* =====================================================
+   CONFETTI ANIMATION
+   ===================================================== */
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    opacity: 0;
+    animation: confetti-fall 3s ease-in-out forwards;
+}
+
+.confetti.circle {
+    border-radius: 50%;
+}
+
+.confetti.square {
+    border-radius: 2px;
+}
+
+.confetti.triangle {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 10px solid currentColor;
+    background: transparent !important;
+}
+
+@keyframes confetti-fall {
+    0% {
+        opacity: 1;
+        transform: translateY(-100px) rotate(0deg);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(100vh) rotate(720deg);
+    }
+}
+
+/* =====================================================
+   SUCCESS CHECKMARK ANIMATION
+   ===================================================== */
+.success-checkmark {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 30px;
+}
+
+.check-icon {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    border-radius: 50%;
+    box-sizing: content-box;
+    border: 4px solid var(--color-green);
+}
+
+.check-icon::before {
+    top: 3px;
+    left: -2px;
+    width: 30px;
+    transform-origin: 100% 50%;
+    border-radius: 100px 0 0 100px;
+}
+
+.check-icon::after {
+    top: 0;
+    left: 30px;
+    width: 60px;
+    transform-origin: 0 50%;
+    border-radius: 0 100px 100px 0;
+    animation: rotate-circle 4.25s ease-in;
+}
+
+.check-icon::before,
+.check-icon::after {
+    content: '';
+    height: 100px;
+    position: absolute;
+    background: var(--color-background);
+    transform: rotate(-45deg);
+}
+
+.icon-line {
+    height: 5px;
+    background-color: var(--color-green);
+    display: block;
+    border-radius: 2px;
+    position: absolute;
+    z-index: 10;
+}
+
+.icon-line.line-tip {
+    top: 56px;
+    left: 24px;
+    width: 25px;
+    transform: rotate(45deg);
+    animation: icon-line-tip 0.75s ease forwards;
+}
+
+.icon-line.line-long {
+    top: 48px;
+    right: 18px;
+    width: 50px;
+    transform: rotate(-45deg);
+    animation: icon-line-long 0.75s ease forwards;
+}
+
+.icon-circle {
+    top: -4px;
+    left: -4px;
+    z-index: 10;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    position: absolute;
+    box-sizing: content-box;
+    border: 4px solid rgba(40, 167, 69, 0.5);
+}
+
+.icon-fix {
+    top: 8px;
+    width: 5px;
+    left: 52px;
+    z-index: 1;
+    height: 100px;
+    position: absolute;
+    transform: rotate(-45deg);
+    background-color: var(--color-background);
+}
+
+@keyframes rotate-circle {
+    0% {
+        transform: rotate(-45deg);
+    }
+
+    5% {
+        transform: rotate(-45deg);
+    }
+
+    12% {
+        transform: rotate(-405deg);
+    }
+
+    100% {
+        transform: rotate(-405deg);
+    }
+}
+
+@keyframes icon-line-tip {
+    0% {
+        width: 0;
+        left: 1px;
+        top: 19px;
+    }
+
+    54% {
+        width: 0;
+        left: 1px;
+        top: 19px;
+    }
+
+    70% {
+        width: 50px;
+        left: -8px;
+        top: 37px;
+    }
+
+    84% {
+        width: 17px;
+        left: 21px;
+        top: 56px;
+    }
+
+    100% {
+        width: 25px;
+        left: 24px;
+        top: 56px;
+    }
+}
+
+@keyframes icon-line-long {
+    0% {
+        width: 0;
+        right: 46px;
+        top: 54px;
+    }
+
+    65% {
+        width: 0;
+        right: 46px;
+        top: 54px;
+    }
+
+    84% {
+        width: 55px;
+        right: 0px;
+        top: 35px;
+    }
+
+    100% {
+        width: 50px;
+        right: 18px;
+        top: 48px;
+    }
+}
+
+.thank-you-content {
+    z-index: 1;
+    position: relative;
+}
+
+/* =====================================================
+   ACCESSIBILITY IMPROVEMENTS
+   ===================================================== */
+
+/* Larger touch targets (min 48px) */
+.rating-option {
+    min-height: 180px;
+    min-width: 180px;
+    padding: 30px;
+}
+
+/* Larger emoji icons */
+.option-emoji {
+    width: 100px;
+    height: 100px;
+}
+
+/* Higher contrast labels */
+.option-label {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.option-label.green {
+    color: #1e7e34;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.option-label.orange {
+    color: #c77b00;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.option-label.red {
+    color: #bd2130;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Larger question titles */
+.question-title {
+    font-size: 2.2rem;
+    line-height: 1.3;
+}
+
+/* Focus indicators for accessibility */
+.rating-option:focus-visible {
+    outline: 4px solid var(--color-primary-dark);
+    outline-offset: 4px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .rating-option {
+        border-width: 3px;
+    }
+
+    .option-label {
+        font-weight: 800;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+    .confetti,
+    .icon-line,
+    .check-icon::after {
+        animation: none;
+    }
+
+    .icon-line.line-tip {
+        width: 25px;
+        left: 24px;
+        top: 56px;
+    }
+
+    .icon-line.line-long {
+        width: 50px;
+        right: 18px;
+        top: 48px;
+    }
+}

@@ -29,6 +29,14 @@
                 <i class="fas fa-file-lines"></i>
                 <span>Laporan</span>
             </a>
+            <a href="/admin/logs" class="nav-item">
+                <i class="fas fa-history"></i>
+                <span>Audit Log</span>
+            </a>
+            <a href="/admin/questions" class="nav-item">
+                <i class="fas fa-edit"></i>
+                <span>Pertanyaan</span>
+            </a>
         </nav>
 
         <div class="sidebar-footer">
@@ -159,13 +167,38 @@
             </div>
         </div>
 
+        <!-- Heatmap Section -->
+        <div class="card heatmap-section">
+            <h3><i class="fas fa-fire"></i> Pola Aktivitas (30 Hari Terakhir)</h3>
+            <p class="heatmap-subtitle">Intensitas submission berdasarkan hari dan jam</p>
+            <div class="heatmap-container">
+                <div class="heatmap-hours">
+                    <span></span>
+                    <span>00</span><span>02</span><span>04</span><span>06</span><span>08</span><span>10</span>
+                    <span>12</span><span>14</span><span>16</span><span>18</span><span>20</span><span>22</span>
+                </div>
+                <div class="heatmap-grid" id="heatmapGrid">
+                    <!-- Grid will be populated by JavaScript -->
+                </div>
+                <div class="heatmap-legend">
+                    <span>Rendah</span>
+                    <div class="legend-scale">
+                        <span style="background: #ebedf0;"></span>
+                        <span style="background: #9be9a8;"></span>
+                        <span style="background: #40c463;"></span>
+                        <span style="background: #30a14e;"></span>
+                        <span style="background: #216e39;"></span>
+                    </div>
+                    <span>Tinggi</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Recent Submissions -->
         <div class="recent-section">
             <div class="section-header">
                 <h2><i class="fas fa-clock-rotate-left"></i> Aktivitas Terbaru</h2>
                 <div class="refresh-info">
-                    <span class="unique-ips"><i class="fas fa-network-wired"></i> <span id="uniqueIps">-</span> IP unik
-                        hari ini</span>
                     <span class="last-updated">Update: <span id="lastUpdated">-</span></span>
                     <button class="btn-refresh" id="refreshBtn" title="Refresh">
                         <i class="fas fa-sync-alt"></i>
@@ -173,30 +206,21 @@
                 </div>
             </div>
 
-            <!-- Suspicious Alert -->
-            <div class="suspicious-alert hidden" id="suspiciousAlert">
-                <i class="fas fa-exclamation-triangle"></i>
-                <span>Terdeteksi <strong id="suspiciousCount">0</strong> IP dengan aktivitas mencurigakan (3+ submit
-                    dalam 10 menit)</span>
-            </div>
-
             <div class="recent-table-container">
                 <table class="recent-table">
                     <thead>
                         <tr>
                             <th>Waktu</th>
-                            <th>IP</th>
                             <th>Q1</th>
                             <th>Q2</th>
                             <th>Q3</th>
                             <th>Q4</th>
                             <th>Q5</th>
-                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="recentTableBody">
                         <tr>
-                            <td colspan="8" class="loading-row">Memuat data...</td>
+                            <td colspan="6" class="loading-row">Memuat data...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -397,8 +421,6 @@
 
                 if (result.success) {
                     renderRecentTable(result.data.recent);
-                    updateSuspiciousAlert(result.data.suspicious);
-                    document.getElementById('uniqueIps').textContent = result.data.uniqueIpsToday;
                     document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('id-ID');
                 }
             } catch (error) {
@@ -410,7 +432,7 @@
             const tbody = document.getElementById('recentTableBody');
 
             if (!submissions || submissions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="no-data-row">Belum ada data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data-row">Belum ada data</td></tr>';
                 return;
             }
 
@@ -426,35 +448,59 @@
             tbody.innerHTML = submissions.map(s => {
                 const time = new Date(s.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                 const date = new Date(s.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
-                const maskedIp = s.ip_address ? s.ip_address.replace(/\.\d+$/, '.xxx') : 'unknown';
-                const statusClass = s.isSuspicious ? 'suspicious' : 'normal';
-                const statusText = s.isSuspicious ? '<i class="fas fa-exclamation-triangle"></i> Mencurigakan' : '<i class="fas fa-check"></i> OK';
 
                 return `
-                    <tr class="${statusClass}">
+                    <tr>
                         <td><small>${date}</small> ${time}</td>
-                        <td><code>${maskedIp}</code></td>
                         <td>${ratingIcon(s.q1_kecepatan)}</td>
                         <td>${ratingIcon(s.q2_keramahan)}</td>
                         <td>${ratingIcon(s.q3_kejelasan)}</td>
                         <td>${ratingIcon(s.q4_fasilitas)}</td>
                         <td>${ratingIcon(s.q5_kepuasan)}</td>
-                        <td class="status-cell ${statusClass}">${statusText}</td>
                     </tr>
                 `;
             }).join('');
         }
 
-        function updateSuspiciousAlert(suspicious) {
-            const alert = document.getElementById('suspiciousAlert');
-            const count = document.getElementById('suspiciousCount');
+        // Heatmap loading
+        async function loadHeatmap() {
+            try {
+                const response = await fetch('/admin/api/heatmap', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
 
-            if (suspicious && suspicious.length > 0) {
-                alert.classList.remove('hidden');
-                count.textContent = suspicious.length;
-            } else {
-                alert.classList.add('hidden');
+                if (result.success) {
+                    renderHeatmap(result.data);
+                }
+            } catch (error) {
+                console.error('Error loading heatmap:', error);
             }
+        }
+
+        function renderHeatmap(data) {
+            const grid = document.getElementById('heatmapGrid');
+            if (!grid) return;
+
+            const colors = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+            let html = '';
+
+            data.days.forEach((day, dayIndex) => {
+                html += `<div class="heatmap-row">`;
+                html += `<span class="day-label">${day.substr(0, 3)}</span>`;
+
+                for (let hour = 0; hour < 24; hour++) {
+                    const count = data.matrix[dayIndex][hour];
+                    const intensity = data.maxCount > 0 ? Math.ceil((count / data.maxCount) * 4) : 0;
+                    const color = colors[intensity];
+                    const tooltip = `${day} ${hour}:00 - ${count} submission${count !== 1 ? 's' : ''}`;
+
+                    html += `<div class="heatmap-cell" style="background: ${color};" title="${tooltip}"></div>`;
+                }
+                html += `</div>`;
+            });
+
+            grid.innerHTML = html;
         }
 
         // Manual refresh
@@ -463,6 +509,7 @@
             btn.classList.add('spinning');
             loadDashboard();
             loadRecentSubmissions();
+            loadHeatmap();
             setTimeout(() => btn.classList.remove('spinning'), 1000);
         });
 
@@ -474,6 +521,7 @@
 
         // Initial load
         loadRecentSubmissions();
+        loadHeatmap();
     </script>
 </body>
 

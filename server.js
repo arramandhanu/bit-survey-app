@@ -531,6 +531,177 @@ app.get('/admin/api/reports/monthly', authMiddleware, async (req, res) => {
     }
 });
 
+// Heatmap API - Hourly submission patterns
+app.get('/admin/api/heatmap', authMiddleware, async (req, res) => {
+    try {
+        // Get hourly data for the last 30 days grouped by day of week and hour
+        const [heatmapData] = await pool.query(`
+            SELECT 
+                DAYOFWEEK(created_at) as day_of_week,
+                HOUR(created_at) as hour,
+                COUNT(*) as count
+            FROM surveys
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            GROUP BY DAYOFWEEK(created_at), HOUR(created_at)
+            ORDER BY day_of_week, hour
+        `);
+
+        // Transform to 7x24 matrix (days x hours)
+        // DAYOFWEEK: 1=Sunday, 2=Monday, ..., 7=Saturday
+        const matrix = Array(7).fill(null).map(() => Array(24).fill(0));
+        let maxCount = 0;
+
+        heatmapData.forEach(row => {
+            const dayIndex = row.day_of_week - 1; // 0-indexed
+            matrix[dayIndex][row.hour] = row.count;
+            if (row.count > maxCount) maxCount = row.count;
+        });
+
+        res.json({
+            success: true,
+            data: {
+                matrix,
+                maxCount,
+                days: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+            }
+        });
+    } catch (error) {
+        console.error('Heatmap error:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Audit Logs API - Paginated submission history
+app.get('/admin/api/logs', authMiddleware, async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const date = req.query.date; // Optional date filter YYYY-MM-DD
+
+    try {
+        let whereClause = '';
+        let params = [];
+
+        if (date) {
+            whereClause = 'WHERE DATE(created_at) = ?';
+            params.push(date);
+        }
+
+        // Get total count
+        const [countResult] = await pool.query(
+            `SELECT COUNT(*) as total FROM surveys ${whereClause}`,
+            params
+        );
+        const total = countResult[0].total;
+
+        // Get paginated data
+        const [submissions] = await pool.query(`
+            SELECT 
+                id,
+                created_at,
+                q1_kecepatan,
+                q2_keramahan,
+                q3_kejelasan,
+                q4_fasilitas,
+                q5_kepuasan
+            FROM surveys
+            ${whereClause}
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        `, [...params, limit, offset]);
+
+        res.json({
+            success: true,
+            data: {
+                submissions,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Logs error:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// =====================================================
+// QUESTIONS API - CRUD for survey questions
+// =====================================================
+
+// Get all questions (public - for kiosk)
+app.get('/api/questions', async (req, res) => {
+    try {
+        const [questions] = await pool.query(`
+            SELECT id, question_key, question_text, question_subtitle,
+                   option_positive, option_neutral, option_negative, display_order
+            FROM questions
+            WHERE is_active = 1
+            ORDER BY display_order ASC
+        `);
+        res.json({ success: true, questions });
+    } catch (error) {
+        console.error('Error getting questions:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Get all questions (admin - includes inactive)
+app.get('/admin/api/questions', authMiddleware, async (req, res) => {
+    try {
+        const [questions] = await pool.query(`
+            SELECT * FROM questions ORDER BY display_order ASC
+        `);
+        res.json({ success: true, questions });
+    } catch (error) {
+        console.error('Error getting questions:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Get single question
+app.get('/admin/api/questions/:id', authMiddleware, async (req, res) => {
+    try {
+        const [questions] = await pool.query(
+            'SELECT * FROM questions WHERE id = ?',
+            [req.params.id]
+        );
+        if (questions.length === 0) {
+            return res.status(404).json({ success: false, error: 'Question not found' });
+        }
+        res.json({ success: true, question: questions[0] });
+    } catch (error) {
+        console.error('Error getting question:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Update question
+app.put('/admin/api/questions/:id', authMiddleware, async (req, res) => {
+    const { question_text, question_subtitle, option_positive, option_neutral, option_negative, is_active } = req.body;
+
+    try {
+        await pool.query(`
+            UPDATE questions SET
+                question_text = ?,
+                question_subtitle = ?,
+                option_positive = ?,
+                option_neutral = ?,
+                option_negative = ?,
+                is_active = ?
+            WHERE id = ?
+        `, [question_text, question_subtitle, option_positive, option_neutral, option_negative, is_active ? 1 : 0, req.params.id]);
+
+        res.json({ success: true, message: 'Question updated' });
+    } catch (error) {
+        console.error('Error updating question:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
 // Get available months for reports
 app.get('/admin/api/reports/months', authMiddleware, async (req, res) => {
     try {
@@ -865,6 +1036,14 @@ app.get('/admin/reports', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'reports.html'));
 });
 
+app.get('/admin/logs', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin', 'logs.html'));
+});
+
+app.get('/admin/questions', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin', 'questions.html'));
+});
+
 // =====================================================
 // START SERVER
 // =====================================================
@@ -873,8 +1052,7 @@ async function start() {
 
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Survey Kiosk running on http://0.0.0.0:${PORT}`);
-        console.log(`📊 Admin dashboard: http://localhost:${PORT}/admin`);
-        console.log(`🔧 Adminer (DB): http://localhost:8080`);
+        console.log(`📊 Admin dashboard: http://0.0.0.0:${PORT}/admin`);
     });
 }
 
