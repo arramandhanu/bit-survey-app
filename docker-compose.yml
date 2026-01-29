@@ -1,0 +1,73 @@
+services:
+  # =====================================================
+  # Survey Application
+  # =====================================================
+  survey-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: survey-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3000
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - ADMIN_SECRET=${ADMIN_SECRET}
+      - ADMIN_DEFAULT_PASSWORD=${ADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - survey-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # =====================================================
+  # MySQL Database
+  # =====================================================
+  mysql:
+    image: mysql:8.0
+    container_name: survey-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - survey-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Security: Do not expose MySQL port to host
+    # Use adminer only in development if needed
+
+# =====================================================
+# Networks
+# =====================================================
+networks:
+  survey-network:
+    driver: bridge
+
+# =====================================================
+# Volumes
+# =====================================================
+volumes:
+  mysql-data:
+    driver: local

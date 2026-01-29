@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Survey BKPM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp"
+                    alt="Logo BKPM" class="login-logo">
+                <h1>Admin Dashboard</h1>
+                <p>Survey Kepuasan Layanan</p>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">
+                        <i class="fas fa-user"></i>
+                        Username
+                    </label>
+                    <input type="text" id="username" name="username" required placeholder="Masukkan username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <input type="password" id="password" name="password" required placeholder="Masukkan password">
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <span>Masuk</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p>&copy; 2026 Kementerian Investasi/BKPM</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('errorMessage');
+            const btnEl = document.getElementById('loginBtn');
+
+            errorEl.textContent = '';
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+
+            try {
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    localStorage.setItem('adminToken', result.token);
+                    localStorage.setItem('adminUser', JSON.stringify(result.user));
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    errorEl.textContent = result.error || 'Login gagal';
+                }
+            } catch (error) {
+                errorEl.textContent = 'Tidak dapat terhubung ke server';
+            } finally {
+                btnEl.disabled = false;
+                btnEl.innerHTML = '<span>Masuk</span><i class="fas fa-arrow-right"></i>';
+            }
+        });
+    </script>
+</body>
+
+</html>

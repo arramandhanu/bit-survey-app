@@ -1,0 +1,992 @@
+/* =====================================================
+   KIOSK SURVEY APPLICATION STYLES
+   Touch-friendly, Full-page Step Design with Slideshow
+   ===================================================== */
+
+/* CSS Custom Properties (Design Tokens) */
+:root {
+    /* Primary Colors */
+    --color-primary-dark: #0F2E5C;
+    --color-primary-light: #1A4A8A;
+    --color-primary-gradient: linear-gradient(135deg, #0F2E5C 0%, #1A4A8A 100%);
+
+    /* Rating Colors */
+    --color-green: #28A745;
+    --color-green-hover: #218838;
+    --color-green-glow: rgba(40, 167, 69, 0.4);
+
+    --color-orange: #F39C12;
+    --color-orange-hover: #E08E0B;
+    --color-orange-glow: rgba(243, 156, 18, 0.4);
+
+    --color-red: #DC3545;
+    --color-red-hover: #C82333;
+    --color-red-glow: rgba(220, 53, 69, 0.4);
+
+    /* Neutral Colors */
+    --color-white: #FFFFFF;
+    --color-black: #000000;
+    --color-text-dark: #212529;
+    --color-text-light: #6C757D;
+    --color-background: #F0F4F8;
+
+    /* Typography */
+    --font-family: 'Montserrat', sans-serif;
+
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+
+    /* Transitions */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+}
+
+/* Reset & Base Styles */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    font-size: 18px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-family);
+    color: var(--color-text-dark);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-background);
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Prevent text selection on touch */
+* {
+    -webkit-touch-callout: none;
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+/* =====================================================
+   SLIDESHOW STYLES (Welcome Screen)
+   ===================================================== */
+.slideshow-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 1s ease, visibility 1s ease;
+}
+
+.slide.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.slide-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transform: scale(1.05);
+    animation: slowZoom 10s ease-in-out infinite alternate;
+}
+
+@keyframes slowZoom {
+    0% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(1.1);
+    }
+}
+
+.slide-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg,
+            rgba(15, 46, 92, 0.85) 0%,
+            rgba(26, 74, 138, 0.75) 100%);
+}
+
+.slide-content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    color: var(--color-white);
+    padding: var(--spacing-lg);
+    max-width: 900px;
+}
+
+.slide-logo {
+    height: 120px;
+    width: auto;
+    filter: brightness(0) invert(1);
+    margin-bottom: var(--spacing-lg);
+    animation: fadeInUp 1s ease;
+}
+
+.slide-icon {
+    font-size: 5rem;
+    margin-bottom: var(--spacing-lg);
+    animation: fadeInUp 1s ease;
+}
+
+.slide-icon i {
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.slide-title {
+    font-size: 3rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: var(--spacing-sm);
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: fadeInUp 1s ease 0.2s both;
+}
+
+.slide-subtitle {
+    font-size: 1.5rem;
+    font-weight: 500;
+    opacity: 0.9;
+    animation: fadeInUp 1s ease 0.4s both;
+}
+
+/* Slide Indicators */
+.slide-indicators {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: var(--spacing-sm);
+    z-index: 20;
+}
+
+.indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.indicator.active {
+    background: var(--color-white);
+    transform: scale(1.3);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+/* Touch Overlay */
+.touch-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 40px;
+}
+
+.touch-hint {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--color-white);
+    font-size: 1.2rem;
+    font-weight: 600;
+    opacity: 0.8;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.touch-hint i {
+    font-size: 1.5rem;
+    animation: bounce 2s ease infinite;
+}
+
+/* =====================================================
+   HEADER STYLES
+   ===================================================== */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: var(--color-primary-gradient);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.navbar-brand {
+    flex-shrink: 0;
+}
+
+.logo {
+    height: 50px;
+    width: auto;
+    filter: brightness(0) invert(1);
+}
+
+.navbar-text {
+    text-align: right;
+    color: var(--color-white);
+}
+
+.institution-name {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.institution-subtitle {
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.accent-line {
+    height: 4px;
+    background: var(--color-green);
+}
+
+/* =====================================================
+   PROGRESS BAR
+   ===================================================== */
+.progress-bar {
+    position: fixed;
+    top: 78px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: linear-gradient(90deg, rgba(15, 46, 92, 0.15), rgba(26, 74, 138, 0.15));
+    z-index: 999;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-green), #20C997, var(--color-green));
+    background-size: 200% 100%;
+    width: 0%;
+    transition: width var(--transition-slow);
+    animation: shimmer 2s linear infinite;
+    box-shadow: 0 0 10px var(--color-green-glow);
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.progress-text {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-white);
+    z-index: 999;
+    background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary-light));
+    padding: 10px 28px;
+    border-radius: 25px;
+    box-shadow: 0 4px 20px rgba(15, 46, 92, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+
+.progress-text::before {
+    content: '📋';
+    font-size: 1rem;
+}
+
+.progress-dots {
+    display: flex;
+    gap: 6px;
+    margin-left: 8px;
+}
+
+.progress-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all var(--transition-normal);
+}
+
+.progress-dot.completed {
+    background: var(--color-green);
+    box-shadow: 0 0 8px var(--color-green-glow);
+}
+
+.progress-dot.active {
+    background: var(--color-white);
+    transform: scale(1.2);
+    animation: pulse-dot 1s ease infinite;
+}
+
+@keyframes pulse-dot {
+
+    0%,
+    100% {
+        transform: scale(1.2);
+    }
+
+    50% {
+        transform: scale(1.4);
+    }
+}
+
+/* =====================================================
+   SURVEY STEPS
+   ===================================================== */
+.survey-step {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 150px var(--spacing-lg) 80px;
+    background: linear-gradient(135deg, #E8F4FD 0%, #F0F4F8 25%, #FDF8F3 50%, #F5F0FA 75%, #E8F4FD 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(100%);
+    transition: all var(--transition-slow);
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    25% {
+        background-position: 50% 100%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    75% {
+        background-position: 50% 0%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.survey-step.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+.survey-step.exit {
+    transform: translateX(-100%);
+}
+
+/* Welcome step special styling */
+#step-welcome {
+    padding: 0;
+    background: transparent;
+}
+
+#step-welcome.active {
+    transform: translateX(0);
+}
+
+.step-content {
+    text-align: center;
+    max-width: 1000px;
+    width: 100%;
+}
+
+/* =====================================================
+   THANK YOU SCREEN
+   ===================================================== */
+.welcome-icon {
+    margin-bottom: var(--spacing-lg);
+}
+
+.large-emoji {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+}
+
+.step-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--color-primary-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.step-title.success {
+    color: var(--color-green);
+}
+
+.step-description {
+    font-size: 1.3rem;
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+}
+
+/* =====================================================
+   QUESTION STYLES
+   ===================================================== */
+.question-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    margin-bottom: var(--spacing-xs);
+}
+
+.question-subtitle {
+    font-size: 1.1rem;
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* =====================================================
+   RATING OPTIONS GRID
+   ===================================================== */
+.rating-grid {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.rating-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 280px;
+    height: 280px;
+    background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%);
+    border: 3px solid #E2E8F0;
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-lg);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.08),
+        0 2px 10px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shine effect on hover */
+.rating-option::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg,
+            transparent 40%,
+            rgba(255, 255, 255, 0.4) 50%,
+            transparent 60%);
+    transform: translateX(-100%) rotate(45deg);
+    transition: transform 0.6s ease;
+}
+
+.rating-option:hover::before {
+    transform: translateX(100%) rotate(45deg);
+}
+
+/* Green option specific */
+.rating-option:nth-child(1) {
+    border-color: rgba(40, 167, 69, 0.3);
+}
+
+.rating-option:nth-child(1):hover {
+    border-color: var(--color-green);
+    background: linear-gradient(145deg, #ECFDF5 0%, #D1FAE5 100%);
+    box-shadow:
+        0 20px 50px rgba(40, 167, 69, 0.25),
+        0 0 0 4px rgba(40, 167, 69, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transform: translateY(-12px) scale(1.02);
+}
+
+/* Orange option specific */
+.rating-option:nth-child(2) {
+    border-color: rgba(243, 156, 18, 0.3);
+}
+
+.rating-option:nth-child(2):hover {
+    border-color: var(--color-orange);
+    background: linear-gradient(145deg, #FFFBEB 0%, #FEF3C7 100%);
+    box-shadow:
+        0 20px 50px rgba(243, 156, 18, 0.25),
+        0 0 0 4px rgba(243, 156, 18, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transform: translateY(-12px) scale(1.02);
+}
+
+/* Red option specific */
+.rating-option:nth-child(3) {
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+.rating-option:nth-child(3):hover {
+    border-color: var(--color-red);
+    background: linear-gradient(145deg, #FEF2F2 0%, #FECACA 100%);
+    box-shadow:
+        0 20px 50px rgba(220, 53, 69, 0.25),
+        0 0 0 4px rgba(220, 53, 69, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transform: translateY(-12px) scale(1.02);
+}
+
+.rating-option:active {
+    transform: scale(0.96);
+    transition: transform 0.1s;
+}
+
+.option-emoji {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    margin-bottom: var(--spacing-md);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.15));
+}
+
+.rating-option:hover .option-emoji {
+    transform: scale(1.15) rotate(-5deg);
+    animation: wiggle 0.5s ease;
+}
+
+@keyframes wiggle {
+
+    0%,
+    100% {
+        transform: scale(1.15) rotate(-5deg);
+    }
+
+    25% {
+        transform: scale(1.15) rotate(5deg);
+    }
+
+    50% {
+        transform: scale(1.15) rotate(-5deg);
+    }
+
+    75% {
+        transform: scale(1.15) rotate(5deg);
+    }
+}
+
+.option-label {
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    transition: all var(--transition-normal);
+}
+
+.option-label.green {
+    color: var(--color-green);
+    text-shadow: 0 2px 10px var(--color-green-glow);
+}
+
+.option-label.orange {
+    color: var(--color-orange);
+    text-shadow: 0 2px 10px var(--color-orange-glow);
+}
+
+.option-label.red {
+    color: var(--color-red);
+    text-shadow: 0 2px 10px var(--color-red-glow);
+}
+
+/* Selected state */
+.rating-option.selected {
+    border-color: var(--color-green) !important;
+    background: linear-gradient(145deg, #ECFDF5 0%, #D1FAE5 100%) !important;
+    box-shadow:
+        0 0 40px var(--color-green-glow),
+        0 0 0 4px rgba(40, 167, 69, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    animation: selected-pulse 1.5s ease infinite;
+}
+
+@keyframes selected-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 30px var(--color-green-glow), 0 0 0 4px rgba(40, 167, 69, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 50px var(--color-green-glow), 0 0 0 6px rgba(40, 167, 69, 0.3);
+    }
+}
+
+/* =====================================================
+   COUNTDOWN
+   ===================================================== */
+.countdown-container {
+    margin-top: var(--spacing-lg);
+}
+
+.countdown-text {
+    font-size: 1rem;
+    color: var(--color-text-light);
+}
+
+.countdown-text span {
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    font-size: 1.2rem;
+}
+
+/* =====================================================
+   FOOTER
+   ===================================================== */
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-primary-dark);
+    color: var(--color-white);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    text-align: center;
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+}
+
+.bounce-animation {
+    animation: bounce 2s ease infinite;
+}
+
+.pulse-animation {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* =====================================================
+   RESPONSIVE STYLES FOR KIOSK
+   ===================================================== */
+
+/* Large Touch Screens (1080p and above) */
+@media (min-width: 1920px) {
+    html {
+        font-size: 22px;
+    }
+
+    .slide-logo {
+        height: 150px;
+    }
+
+    .slide-title {
+        font-size: 4rem;
+    }
+
+    .large-emoji {
+        width: 200px;
+        height: 200px;
+    }
+
+    .rating-option {
+        width: 320px;
+        height: 320px;
+    }
+
+    .option-emoji {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+/* Tablet Portrait */
+@media (max-width: 1024px) {
+    html {
+        font-size: 16px;
+    }
+
+    .rating-grid {
+        gap: var(--spacing-md);
+    }
+
+    .rating-option {
+        width: 220px;
+        height: 220px;
+    }
+
+    .option-emoji {
+        width: 100px;
+        height: 100px;
+    }
+
+    .slide-title {
+        font-size: 2.5rem;
+    }
+
+    .slide-logo {
+        height: 80px;
+    }
+}
+
+/* Mobile / Small Tablets */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .logo {
+        height: 40px;
+    }
+
+    .institution-name {
+        font-size: 1rem;
+    }
+
+    .navbar-text {
+        text-align: center;
+    }
+
+    .progress-bar {
+        top: 95px;
+    }
+
+    .survey-step {
+        padding-top: 120px;
+    }
+
+    .step-title {
+        font-size: 1.8rem;
+    }
+
+    .question-title {
+        font-size: 1.4rem;
+    }
+
+    .rating-grid {
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+
+    .rating-option {
+        width: 100%;
+        max-width: 350px;
+        height: auto;
+        flex-direction: row;
+        padding: var(--spacing-md);
+        gap: var(--spacing-md);
+    }
+
+    .option-emoji {
+        width: 70px;
+        height: 70px;
+        margin-bottom: 0;
+    }
+
+    .large-emoji {
+        width: 100px;
+        height: 100px;
+    }
+
+    .slide-title {
+        font-size: 1.8rem;
+    }
+
+    .slide-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .slide-logo {
+        height: 60px;
+    }
+
+    .slide-icon {
+        font-size: 3rem;
+    }
+}
+
+/* Very Small Screens */
+@media (max-width: 480px) {
+    html {
+        font-size: 14px;
+    }
+
+    .step-title {
+        font-size: 1.5rem;
+    }
+
+    .step-description {
+        font-size: 1rem;
+    }
+
+    .slide-title {
+        font-size: 1.5rem;
+    }
+}
+
+/* =====================================================
+   LOADING STATE
+   ===================================================== */
+.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 4px solid transparent;
+    border-top-color: var(--color-primary-dark);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =====================================================
+   HIDE SCROLLBARS (Kiosk Mode)
+   ===================================================== */
+::-webkit-scrollbar {
+    display: none;
+}
+
+body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

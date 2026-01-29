@@ -1,0 +1,33 @@
+{
+    "responses": [],
+    "stats": {
+        "total": 0,
+        "questions": {
+            "q1_kecepatan": {
+                "sangat_baik": 0,
+                "cukup_baik": 0,
+                "kurang_baik": 0
+            },
+            "q2_keramahan": {
+                "sangat_baik": 0,
+                "cukup_baik": 0,
+                "kurang_baik": 0
+            },
+            "q3_kejelasan": {
+                "sangat_baik": 0,
+                "cukup_baik": 0,
+                "kurang_baik": 0
+            },
+            "q4_fasilitas": {
+                "sangat_baik": 0,
+                "cukup_baik": 0,
+                "kurang_baik": 0
+            },
+            "q5_kepuasan": {
+                "sangat_baik": 0,
+                "cukup_baik": 0,
+                "kurang_baik": 0
+            }
+        }
+    }
+}
