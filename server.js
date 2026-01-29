@@ -702,6 +702,35 @@ app.put('/admin/api/questions/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// Reset questions to defaults
+app.post('/admin/api/questions/reset', authMiddleware, async (req, res) => {
+    const defaults = [
+        { key: 'q1', text: 'Bagaimana kecepatan pelayanan kami?', positive: 'SANGAT CEPAT', neutral: 'CUKUP CEPAT', negative: 'KURANG CEPAT' },
+        { key: 'q2', text: 'Bagaimana keramahan petugas kami?', positive: 'SANGAT RAMAH', neutral: 'CUKUP RAMAH', negative: 'KURANG RAMAH' },
+        { key: 'q3', text: 'Bagaimana kejelasan informasi yang diberikan?', positive: 'SANGAT JELAS', neutral: 'CUKUP JELAS', negative: 'KURANG JELAS' },
+        { key: 'q4', text: 'Bagaimana kondisi fasilitas kami?', positive: 'SANGAT BAIK', neutral: 'CUKUP BAIK', negative: 'KURANG BAIK' },
+        { key: 'q5', text: 'Secara keseluruhan, bagaimana kepuasan Anda?', positive: 'SANGAT PUAS', neutral: 'CUKUP PUAS', negative: 'KURANG PUAS' }
+    ];
+
+    try {
+        for (const q of defaults) {
+            await pool.query(`
+                UPDATE questions SET
+                    question_text = ?,
+                    option_positive = ?,
+                    option_neutral = ?,
+                    option_negative = ?,
+                    is_active = 1
+                WHERE question_key = ?
+            `, [q.text, q.positive, q.neutral, q.negative, q.key]);
+        }
+        res.json({ success: true, message: 'Questions reset to defaults' });
+    } catch (error) {
+        console.error('Error resetting questions:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
 // Get available months for reports
 app.get('/admin/api/reports/months', authMiddleware, async (req, res) => {
     try {

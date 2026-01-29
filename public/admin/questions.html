@@ -275,7 +275,7 @@
         <div class="sidebar-header">
             <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp" alt="Logo"
                 class="sidebar-logo">
-            <h2>Survey Admin</h2>
+            <h2>Survey Administrator</h2>
         </div>
 
         <nav class="sidebar-nav">
@@ -317,6 +317,14 @@
         </header>
 
         <div class="content-area">
+            <!-- Action Bar -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                <button id="resetBtn"
+                    style="padding: 10px 20px; background: #DC3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <i class="fas fa-undo"></i> Reset ke Default
+                </button>
+            </div>
+
             <div class="questions-list" id="questionsList">
                 <p style="text-align: center; padding: 30px;">Memuat pertanyaan...</p>
             </div>
@@ -498,6 +506,27 @@
             document.getElementById('editModal').classList.remove('active');
         });
         document.getElementById('saveBtn').addEventListener('click', saveQuestion);
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            if (!confirm('Apakah Anda yakin ingin mereset semua pertanyaan ke default?')) {
+                return;
+            }
+            try {
+                const response = await fetch('/admin/api/questions/reset', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Pertanyaan berhasil direset ke default!');
+                    loadQuestions();
+                } else {
+                    alert('Gagal mereset: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error resetting questions:', error);
+                alert('Error: ' + error.message);
+            }
+        });
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('adminToken');
             window.location.href = '/admin/login';

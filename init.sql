@@ -128,4 +128,8 @@ INSERT INTO questions (question_key, question_text, option_positive, option_neut
 ('q3', 'Bagaimana kejelasan informasi yang diberikan?', 'SANGAT JELAS', 'CUKUP JELAS', 'KURANG JELAS', 3),
 ('q4', 'Bagaimana kondisi fasilitas kami?', 'SANGAT BAIK', 'CUKUP BAIK', 'KURANG BAIK', 4),
 ('q5', 'Secara keseluruhan, bagaimana kepuasan Anda?', 'SANGAT PUAS', 'CUKUP PUAS', 'KURANG PUAS', 5)
-ON DUPLICATE KEY UPDATE question_text = VALUES(question_text);
+ON DUPLICATE KEY UPDATE 
+    question_text = VALUES(question_text),
+    option_positive = VALUES(option_positive),
+    option_neutral = VALUES(option_neutral),
+    option_negative = VALUES(option_negative);
