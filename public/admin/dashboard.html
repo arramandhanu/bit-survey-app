@@ -159,6 +159,50 @@
             </div>
         </div>
 
+        <!-- Recent Submissions -->
+        <div class="recent-section">
+            <div class="section-header">
+                <h2><i class="fas fa-clock-rotate-left"></i> Aktivitas Terbaru</h2>
+                <div class="refresh-info">
+                    <span class="unique-ips"><i class="fas fa-network-wired"></i> <span id="uniqueIps">-</span> IP unik
+                        hari ini</span>
+                    <span class="last-updated">Update: <span id="lastUpdated">-</span></span>
+                    <button class="btn-refresh" id="refreshBtn" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Suspicious Alert -->
+            <div class="suspicious-alert hidden" id="suspiciousAlert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Terdeteksi <strong id="suspiciousCount">0</strong> IP dengan aktivitas mencurigakan (3+ submit
+                    dalam 10 menit)</span>
+            </div>
+
+            <div class="recent-table-container">
+                <table class="recent-table">
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>IP</th>
+                            <th>Q1</th>
+                            <th>Q2</th>
+                            <th>Q3</th>
+                            <th>Q4</th>
+                            <th>Q5</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentTableBody">
+                        <tr>
+                            <td colspan="8" class="loading-row">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Quick Actions -->
         <div class="actions-section">
             <h3><i class="fas fa-bolt"></i> Aksi Cepat</h3>
@@ -341,6 +385,95 @@
             localStorage.removeItem('adminUser');
             window.location.href = '/admin';
         });
+
+        // =========================================================
+        // RECENT SUBMISSIONS & AUTO-REFRESH
+        // =========================================================
+
+        async function loadRecentSubmissions() {
+            try {
+                const response = await fetchWithAuth('/admin/api/recent');
+                const result = await response.json();
+
+                if (result.success) {
+                    renderRecentTable(result.data.recent);
+                    updateSuspiciousAlert(result.data.suspicious);
+                    document.getElementById('uniqueIps').textContent = result.data.uniqueIpsToday;
+                    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('id-ID');
+                }
+            } catch (error) {
+                console.error('Error loading recent:', error);
+            }
+        }
+
+        function renderRecentTable(submissions) {
+            const tbody = document.getElementById('recentTableBody');
+
+            if (!submissions || submissions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="no-data-row">Belum ada data</td></tr>';
+                return;
+            }
+
+            const ratingIcon = (val) => {
+                const icons = {
+                    'sangat_baik': '<span class="rating-icon green">😊</span>',
+                    'cukup_baik': '<span class="rating-icon orange">😐</span>',
+                    'kurang_baik': '<span class="rating-icon red">😞</span>'
+                };
+                return icons[val] || '-';
+            };
+
+            tbody.innerHTML = submissions.map(s => {
+                const time = new Date(s.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                const date = new Date(s.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                const maskedIp = s.ip_address ? s.ip_address.replace(/\.\d+$/, '.xxx') : 'unknown';
+                const statusClass = s.isSuspicious ? 'suspicious' : 'normal';
+                const statusText = s.isSuspicious ? '<i class="fas fa-exclamation-triangle"></i> Mencurigakan' : '<i class="fas fa-check"></i> OK';
+
+                return `
+                    <tr class="${statusClass}">
+                        <td><small>${date}</small> ${time}</td>
+                        <td><code>${maskedIp}</code></td>
+                        <td>${ratingIcon(s.q1_kecepatan)}</td>
+                        <td>${ratingIcon(s.q2_keramahan)}</td>
+                        <td>${ratingIcon(s.q3_kejelasan)}</td>
+                        <td>${ratingIcon(s.q4_fasilitas)}</td>
+                        <td>${ratingIcon(s.q5_kepuasan)}</td>
+                        <td class="status-cell ${statusClass}">${statusText}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateSuspiciousAlert(suspicious) {
+            const alert = document.getElementById('suspiciousAlert');
+            const count = document.getElementById('suspiciousCount');
+
+            if (suspicious && suspicious.length > 0) {
+                alert.classList.remove('hidden');
+                count.textContent = suspicious.length;
+            } else {
+                alert.classList.add('hidden');
+            }
+        }
+
+        // Manual refresh
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('spinning');
+            loadDashboard();
+            loadRecentSubmissions();
+            setTimeout(() => btn.classList.remove('spinning'), 1000);
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            loadDashboard();
+            loadRecentSubmissions();
+        }, 30000);
+
+        // Initial load
+        loadRecentSubmissions();
     </script>
 </body>
 

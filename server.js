@@ -150,6 +150,10 @@ app.post('/api/survey', async (req, res) => {
         });
     }
 
+    const timestamp = new Date().toISOString();
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
     try {
         const [result] = await pool.query(
             `INSERT INTO surveys (q1_kecepatan, q2_keramahan, q3_kejelasan, q4_fasilitas, q5_kepuasan, user_agent, ip_address)
@@ -160,10 +164,28 @@ app.post('/api/survey', async (req, res) => {
                 questions.q3 || null,
                 questions.q4 || null,
                 questions.q5 || null,
-                req.headers['user-agent'] || 'unknown',
-                req.ip || req.connection?.remoteAddress || 'unknown'
+                userAgent,
+                ipAddress
             ]
         );
+
+        // ========== AUDIT LOG ==========
+        const auditLog = {
+            event: 'SURVEY_SUBMITTED',
+            timestamp: timestamp,
+            surveyId: result.insertId,
+            ip: ipAddress,
+            userAgent: userAgent,
+            answers: {
+                q1_kecepatan: questions.q1,
+                q2_keramahan: questions.q2,
+                q3_kejelasan: questions.q3,
+                q4_fasilitas: questions.q4,
+                q5_kepuasan: questions.q5
+            }
+        };
+        console.log('[AUDIT]', JSON.stringify(auditLog));
+        // ================================
 
         res.status(201).json({
             success: true,
@@ -171,7 +193,11 @@ app.post('/api/survey', async (req, res) => {
             id: result.insertId
         });
     } catch (error) {
-        console.error('Error saving survey:', error);
+        console.error('[ERROR] Survey submission failed:', {
+            timestamp: timestamp,
+            ip: ipAddress,
+            error: error.message
+        });
         res.status(500).json({
             success: false,
             error: 'Failed to save survey'
@@ -179,12 +205,13 @@ app.post('/api/survey', async (req, res) => {
     }
 });
 
-// Get survey statistics (public)
+// Get survey statistics (public - for real-time counter)
 app.get('/api/survey/stats', async (req, res) => {
     try {
         const [rows] = await pool.query(`
             SELECT 
                 COUNT(*) as total,
+                SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as today,
                 SUM(CASE WHEN q5_kepuasan = 'sangat_baik' THEN 1 ELSE 0 END) as satisfied,
                 SUM(CASE WHEN q5_kepuasan = 'cukup_baik' THEN 1 ELSE 0 END) as neutral,
                 SUM(CASE WHEN q5_kepuasan = 'kurang_baik' THEN 1 ELSE 0 END) as unsatisfied
@@ -193,7 +220,13 @@ app.get('/api/survey/stats', async (req, res) => {
 
         res.json({
             success: true,
-            stats: rows[0],
+            stats: {
+                total: rows[0].total || 0,
+                today: rows[0].today || 0,
+                satisfied: rows[0].satisfied || 0,
+                neutral: rows[0].neutral || 0,
+                unsatisfied: rows[0].unsatisfied || 0
+            },
             timestamp: new Date().toISOString()
         });
     } catch (error) {
@@ -361,6 +394,63 @@ app.get('/admin/api/dashboard', authMiddleware, async (req, res) => {
         });
     } catch (error) {
         console.error('Dashboard error:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Get recent submissions with suspicious activity detection (protected)
+app.get('/admin/api/recent', authMiddleware, async (req, res) => {
+    try {
+        // Get last 15 submissions
+        const [recent] = await pool.query(`
+            SELECT 
+                id,
+                q1_kecepatan,
+                q2_keramahan,
+                q3_kejelasan,
+                q4_fasilitas,
+                q5_kepuasan,
+                ip_address,
+                created_at
+            FROM surveys
+            ORDER BY created_at DESC
+            LIMIT 15
+        `);
+
+        // Detect suspicious activity: same IP submitting 3+ times in 10 minutes
+        const [suspicious] = await pool.query(`
+            SELECT 
+                ip_address,
+                COUNT(*) as count,
+                MIN(created_at) as first_submission,
+                MAX(created_at) as last_submission
+            FROM surveys
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+            GROUP BY ip_address
+            HAVING COUNT(*) >= 3
+        `);
+
+        // Get unique IPs today
+        const [uniqueIps] = await pool.query(`
+            SELECT COUNT(DISTINCT ip_address) as unique_ips
+            FROM surveys
+            WHERE DATE(created_at) = CURDATE()
+        `);
+
+        res.json({
+            success: true,
+            data: {
+                recent: recent.map(r => ({
+                    ...r,
+                    isSuspicious: suspicious.some(s => s.ip_address === r.ip_address)
+                })),
+                suspicious: suspicious,
+                uniqueIpsToday: uniqueIps[0].unique_ips || 0,
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Recent submissions error:', error);
         res.status(500).json({ success: false, error: 'Database error' });
     }
 });
