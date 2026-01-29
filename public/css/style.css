@@ -175,6 +175,25 @@ body {
     animation: fadeInUp 1s ease;
 }
 
+.slide-logo-full {
+    height: 140px;
+    width: auto;
+    margin-bottom: var(--spacing-lg);
+    animation: fadeInUp 1s ease;
+}
+
+.logo-header {
+    height: 50px;
+    width: auto;
+}
+
+.navbar-divider {
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(to bottom, #00A859, #28A745);
+    margin: 0 20px;
+}
+
 .slide-icon {
     font-size: 5rem;
     margin-bottom: var(--spacing-lg);
