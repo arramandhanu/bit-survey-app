@@ -17,7 +17,7 @@
         <div class="sidebar-header">
             <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp" alt="Logo"
                 class="sidebar-logo">
-            <h2>Survey Admin</h2>
+            <h2>Survey Administrator</h2>
         </div>
 
         <nav class="sidebar-nav">
@@ -28,6 +28,14 @@
             <a href="/admin/reports" class="nav-item active">
                 <i class="fas fa-file-lines"></i>
                 <span>Laporan</span>
+            </a>
+            <a href="/admin/logs" class="nav-item">
+                <i class="fas fa-history"></i>
+                <span>Audit Log</span>
+            </a>
+            <a href="/admin/questions" class="nav-item">
+                <i class="fas fa-edit"></i>
+                <span>Pertanyaan</span>
             </a>
         </nav>
 
@@ -175,7 +183,7 @@
 
             let html = `
                 <div class="report-header">
-                    <h2>Laporan Survey Kepuasan Layanan</h2>
+                    <h2>Laporan Pelayanan Perizinan Berusaha Terintegrasi Secara Elektronik</h2>
                     <h3>Periode: ${monthNames[data.month - 1]} ${data.year}</h3>
                 </div>
 
@@ -276,7 +284,7 @@
                     const date = new Date(day.date);
                     html += `
                         <tr>
-                            <td>${date.toLocaleDateString('id-ID')}</td>
+                            <td>${date.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' })}</td>
                             <td>${day.total}</td>
                             <td>${day.satisfied}</td>
                         </tr>

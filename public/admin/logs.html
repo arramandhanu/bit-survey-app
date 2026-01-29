@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log - Admin</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp" alt="Logo"
+                class="sidebar-logo">
+            <h2>Survey Administrator</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard" class="nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/admin/reports" class="nav-item">
+                <i class="fas fa-file-lines"></i>
+                <span>Laporan</span>
+            </a>
+            <a href="/admin/logs" class="nav-item active">
+                <i class="fas fa-history"></i>
+                <span>Audit Log</span>
+            </a>
+            <a href="/admin/questions" class="nav-item">
+                <i class="fas fa-edit"></i>
+                <span>Pertanyaan</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span>Administrator</span>
+            </div>
+            <button class="btn-logout" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                Keluar
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-header">
+            <h1><i class="fas fa-history"></i> Audit Log</h1>
+            <p>Riwayat semua submission survey</p>
+        </header>
+
+        <div class="content-area">
+            <!-- Filters -->
+            <div class="card">
+                <div class="logs-filters">
+                    <label><i class="fas fa-calendar"></i> Filter Tanggal:</label>
+                    <input type="date" id="dateFilter">
+                    <button id="filterBtn"><i class="fas fa-search"></i> Filter</button>
+                    <button id="clearBtn" style="background: #6C757D;"><i class="fas fa-times"></i> Reset</button>
+                </div>
+
+                <!-- Table -->
+                <table class="logs-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Waktu</th>
+                            <th>Q1 Kecepatan</th>
+                            <th>Q2 Keramahan</th>
+                            <th>Q3 Kejelasan</th>
+                            <th>Q4 Fasilitas</th>
+                            <th>Q5 Kepuasan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 30px;">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button id="prevBtn" disabled><i class="fas fa-chevron-left"></i> Sebelumnya</button>
+                    <span id="pageInfo">Halaman 1 dari 1</span>
+                    <button id="nextBtn" disabled>Selanjutnya <i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+            window.location.href = '/admin/login';
+        }
+
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentDate = '';
+
+        // Load logs
+        async function loadLogs(page = 1, date = '') {
+            try {
+                let url = `/admin/api/logs?page=${page}&limit=20`;
+                if (date) {
+                    url += `&date=${date}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    renderTable(result.data.submissions);
+                    updatePagination(result.data.pagination);
+                }
+            } catch (error) {
+                console.error('Error loading logs:', error);
+            }
+        }
+
+        function renderTable(submissions) {
+            const tbody = document.getElementById('logsTableBody');
+
+            if (!submissions || submissions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px;">Tidak ada data</td></tr>';
+                return;
+            }
+
+            const formatRating = (val) => {
+                const labels = {
+                    'sangat_baik': '<span style="color: #28A745;">😊 Sangat Baik</span>',
+                    'cukup_baik': '<span style="color: #F39C12;">😐 Cukup Baik</span>',
+                    'kurang_baik': '<span style="color: #DC3545;">😞 Kurang Baik</span>'
+                };
+                return labels[val] || val;
+            };
+
+            tbody.innerHTML = submissions.map(s => {
+                const datetime = new Date(s.created_at).toLocaleString('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return `
+                    <tr>
+                        <td><code>#${s.id}</code></td>
+                        <td>${datetime}</td>
+                        <td>${formatRating(s.q1_kecepatan)}</td>
+                        <td>${formatRating(s.q2_keramahan)}</td>
+                        <td>${formatRating(s.q3_kejelasan)}</td>
+                        <td>${formatRating(s.q4_fasilitas)}</td>
+                        <td>${formatRating(s.q5_kepuasan)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updatePagination(pagination) {
+            currentPage = pagination.page;
+            totalPages = pagination.totalPages;
+
+            document.getElementById('pageInfo').textContent =
+                `Halaman ${currentPage} dari ${totalPages} (${pagination.total} total)`;
+
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+        }
+
+        // Event listeners
+        document.getElementById('filterBtn').addEventListener('click', () => {
+            currentDate = document.getElementById('dateFilter').value;
+            currentPage = 1;
+            loadLogs(currentPage, currentDate);
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            document.getElementById('dateFilter').value = '';
+            currentDate = '';
+            currentPage = 1;
+            loadLogs(currentPage, currentDate);
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadLogs(currentPage, currentDate);
+            }
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadLogs(currentPage, currentDate);
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('adminToken');
+            window.location.href = '/admin/login';
+        });
+
+        // Initial load
+        loadLogs();
+    </script>
+</body>
+
+</html>

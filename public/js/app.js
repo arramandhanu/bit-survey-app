@@ -7,7 +7,7 @@
     'use strict';
 
     // Configuration
-    const TOTAL_QUESTIONS = 5;
+    let TOTAL_QUESTIONS = 5;
     const COUNTDOWN_SECONDS = 5;
     const SLIDESHOW_INTERVAL = 5000; // 5 seconds per slide
     const API_BASE = window.location.origin;
@@ -19,6 +19,14 @@
     let slideshowTimer = null;
     let currentSlide = 1;
     let isTransitioning = false;
+    let questionsData = [];
+
+    // Emoji URLs for different question types
+    const emojiMap = {
+        positive: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Star-Struck.png',
+        neutral: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Slightly%20Smiling%20Face.png',
+        negative: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Worried%20Face.png'
+    };
 
     // DOM Elements
     let progressFill;
@@ -32,7 +40,7 @@
     /**
      * Initialize the application
      */
-    function init() {
+    async function init() {
         // Get DOM elements
         progressFill = document.getElementById('progressFill');
         progressText = document.getElementById('progressText');
@@ -42,10 +50,65 @@
         surveyFooter = document.getElementById('surveyFooter');
         touchOverlay = document.getElementById('touchToStart');
 
+        // Load questions from API
+        await loadQuestions();
+
         bindEvents();
         startSlideshow();
         preloadImages();
         console.log('Kiosk Survey with Slideshow initialized');
+    }
+
+    /**
+     * Load questions from API
+     */
+    async function loadQuestions() {
+        try {
+            const response = await fetch(`${API_BASE}/api/questions`);
+            const result = await response.json();
+
+            if (result.success && result.questions.length > 0) {
+                questionsData = result.questions;
+                TOTAL_QUESTIONS = questionsData.length;
+                renderQuestions();
+            } else {
+                console.error('No questions found');
+            }
+        } catch (error) {
+            console.error('Error loading questions:', error);
+        }
+    }
+
+    /**
+     * Render questions dynamically
+     */
+    function renderQuestions() {
+        const container = document.getElementById('questionsContainer');
+        if (!container) return;
+
+        container.innerHTML = questionsData.map((q, index) => `
+            <section class="survey-step" id="step-${index + 1}">
+                <div class="step-content">
+                    <h2 class="question-title">${q.question_text}</h2>
+                    <p class="question-subtitle">${q.question_subtitle}</p>
+
+                    <div class="rating-grid">
+                        <button class="rating-option" data-question="${q.question_key}" data-value="sangat_baik">
+                            <img src="${emojiMap.positive}" alt="${q.option_positive}" class="option-emoji">
+                            <span class="option-label green">${q.option_positive}</span>
+                        </button>
+                        <button class="rating-option" data-question="${q.question_key}" data-value="cukup_baik">
+                            <img src="${emojiMap.neutral}" alt="${q.option_neutral}" class="option-emoji">
+                            <span class="option-label orange">${q.option_neutral}</span>
+                        </button>
+                        <button class="rating-option" data-question="${q.question_key}" data-value="kurang_baik">
+                            <img src="${emojiMap.negative}" alt="${q.option_negative}" class="option-emoji">
+                            <span class="option-label red">${q.option_negative}</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        `).join('');
     }
 
     /**
@@ -198,12 +261,25 @@
     /**
      * Start the survey
      */
-    function startSurvey() {
+    async function startSurvey() {
         if (isTransitioning) return;
 
         console.log('Starting survey...');
         stopSlideshow();
         answers = {};
+
+        // Start session - server sets HttpOnly cookie automatically
+        try {
+            const response = await fetch(`${API_BASE}/api/session`, {
+                credentials: 'include'  // Include cookies in request
+            });
+            const data = await response.json();
+            if (data.success) {
+                console.log('Session started (cookie set by server)');
+            }
+        } catch (error) {
+            console.error('Failed to start session:', error);
+        }
 
         // Show header, footer, progress bar, progress text
         if (surveyHeader) surveyHeader.classList.remove('hidden');
@@ -319,8 +395,9 @@
         try {
             const response = await fetch(`${API_BASE}/api/survey`, {
                 method: 'POST',
+                credentials: 'include',  // Include cookies (HttpOnly session)
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     questions: answers,

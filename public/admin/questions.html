@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Editor - Admin</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .questions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .question-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--admin-primary);
+        }
+
+        .question-card.inactive {
+            opacity: 0.6;
+            border-left-color: #6C757D;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .question-key {
+            background: var(--admin-primary);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .question-status {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+
+        .question-status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .question-status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--admin-text);
+        }
+
+        .options-preview {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .option-tag {
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .option-tag.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .option-tag.neutral {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .option-tag.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .question-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-edit {
+            padding: 8px 18px;
+            background: var(--admin-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+
+        .btn-edit:hover {
+            background: var(--admin-primary-light);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            background: var(--admin-primary);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--admin-text);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ccc;
+            border-radius: 34px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: var(--admin-green);
+        }
+
+        .toggle-switch input:checked+.toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .modal-footer {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .btn-cancel {
+            padding: 10px 20px;
+            background: #6C757D;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-save {
+            padding: 10px 25px;
+            background: var(--admin-green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp" alt="Logo"
+                class="sidebar-logo">
+            <h2>Survey Administrator</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard" class="nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/admin/reports" class="nav-item">
+                <i class="fas fa-file-lines"></i>
+                <span>Laporan</span>
+            </a>
+            <a href="/admin/logs" class="nav-item">
+                <i class="fas fa-history"></i>
+                <span>Audit Log</span>
+            </a>
+            <a href="/admin/questions" class="nav-item active">
+                <i class="fas fa-edit"></i>
+                <span>Pertanyaan</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span>Administrator</span>
+            </div>
+            <button class="btn-logout" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                Keluar
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-header">
+            <h1><i class="fas fa-edit"></i> Question Editor</h1>
+            <p>Kelola pertanyaan survey kiosk</p>
+        </header>
+
+        <div class="content-area">
+            <!-- Action Bar -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                <button id="resetBtn"
+                    style="padding: 10px 20px; background: #DC3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <i class="fas fa-undo"></i> Reset ke Default
+                </button>
+            </div>
+
+            <div class="questions-list" id="questionsList">
+                <p style="text-align: center; padding: 30px;">Memuat pertanyaan...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Edit Pertanyaan</h2>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId">
+
+                <div class="form-group">
+                    <label><i class="fas fa-question-circle"></i> Teks Pertanyaan</label>
+                    <textarea id="editText" placeholder="Masukkan pertanyaan..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> Subtitle</label>
+                    <input type="text" id="editSubtitle" placeholder="Pilih salah satu penilaian">
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-list"></i> Opsi Jawaban</label>
+                    <div class="options-grid">
+                        <div>
+                            <small style="color: var(--admin-green);">Positif</small>
+                            <input type="text" id="editPositive" placeholder="SANGAT BAIK">
+                        </div>
+                        <div>
+                            <small style="color: var(--admin-orange);">Netral</small>
+                            <input type="text" id="editNeutral" placeholder="CUKUP BAIK">
+                        </div>
+                        <div>
+                            <small style="color: var(--admin-red);">Negatif</small>
+                            <input type="text" id="editNegative" placeholder="KURANG BAIK">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-toggle-on"></i> Status</label>
+                    <div class="toggle-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="editActive">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span id="activeLabel">Aktif</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancelBtn">Batal</button>
+                <button class="btn-save" id="saveBtn"><i class="fas fa-save"></i> Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+            window.location.href = '/admin/login';
+        }
+
+        // Load questions
+        async function loadQuestions() {
+            try {
+                const response = await fetch('/admin/api/questions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    renderQuestions(result.questions);
+                }
+            } catch (error) {
+                console.error('Error loading questions:', error);
+            }
+        }
+
+        function renderQuestions(questions) {
+            const container = document.getElementById('questionsList');
+
+            container.innerHTML = questions.map(q => `
+                <div class="question-card ${q.is_active ? '' : 'inactive'}">
+                    <div class="question-header">
+                        <span class="question-key">${q.question_key.toUpperCase()}</span>
+                        <span class="question-status ${q.is_active ? 'active' : 'inactive'}">
+                            ${q.is_active ? '✓ Aktif' : '✗ Nonaktif'}
+                        </span>
+                    </div>
+                    <div class="question-text">${q.question_text}</div>
+                    <div class="options-preview">
+                        <span class="option-tag positive">😊 ${q.option_positive}</span>
+                        <span class="option-tag neutral">😐 ${q.option_neutral}</span>
+                        <span class="option-tag negative">😞 ${q.option_negative}</span>
+                    </div>
+                    <div class="question-actions">
+                        <button class="btn-edit" onclick="editQuestion(${q.id})">
+                            <i class="fas fa-pencil-alt"></i> Edit
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Edit question
+        async function editQuestion(id) {
+            try {
+                const response = await fetch(`/admin/api/questions/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const q = result.question;
+                    document.getElementById('editId').value = q.id;
+                    document.getElementById('editText').value = q.question_text;
+                    document.getElementById('editSubtitle').value = q.question_subtitle;
+                    document.getElementById('editPositive').value = q.option_positive;
+                    document.getElementById('editNeutral').value = q.option_neutral;
+                    document.getElementById('editNegative').value = q.option_negative;
+                    document.getElementById('editActive').checked = q.is_active == 1;
+                    updateActiveLabel();
+
+                    document.getElementById('editModal').classList.add('active');
+                }
+            } catch (error) {
+                console.error('Error loading question:', error);
+            }
+        }
+
+        function updateActiveLabel() {
+            const isActive = document.getElementById('editActive').checked;
+            document.getElementById('activeLabel').textContent = isActive ? 'Aktif' : 'Nonaktif';
+        }
+
+        // Save question
+        async function saveQuestion() {
+            const id = document.getElementById('editId').value;
+            const data = {
+                question_text: document.getElementById('editText').value,
+                question_subtitle: document.getElementById('editSubtitle').value,
+                option_positive: document.getElementById('editPositive').value,
+                option_neutral: document.getElementById('editNeutral').value,
+                option_negative: document.getElementById('editNegative').value,
+                is_active: document.getElementById('editActive').checked
+            };
+
+            try {
+                const response = await fetch(`/admin/api/questions/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('editModal').classList.remove('active');
+                    loadQuestions();
+                } else {
+                    alert('Gagal menyimpan: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving question:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('editActive').addEventListener('change', updateActiveLabel);
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            document.getElementById('editModal').classList.remove('active');
+        });
+        document.getElementById('saveBtn').addEventListener('click', saveQuestion);
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            if (!confirm('Apakah Anda yakin ingin mereset semua pertanyaan ke default?')) {
+                return;
+            }
+            try {
+                const response = await fetch('/admin/api/questions/reset', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Pertanyaan berhasil direset ke default!');
+                    loadQuestions();
+                } else {
+                    alert('Gagal mereset: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error resetting questions:', error);
+                alert('Error: ' + error.message);
+            }
+        });
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('adminToken');
+            window.location.href = '/admin/login';
+        });
+
+        // Close modal on overlay click
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') {
+                document.getElementById('editModal').classList.remove('active');
+            }
+        });
+
+        // Initial load
+        loadQuestions();
+    </script>
+</body>
+
+</html>

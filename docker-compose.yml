@@ -13,6 +13,7 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
+      - TZ=Asia/Jakarta
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=${DB_USER}
@@ -44,6 +45,7 @@ services:
       - MYSQL_DATABASE=${DB_NAME}
       - MYSQL_USER=${DB_USER}
       - MYSQL_PASSWORD=${DB_PASSWORD}
+      - TZ=Asia/Jakarta
     volumes:
       - mysql-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -55,8 +57,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    # Security: Do not expose MySQL port to host
-    # Use adminer only in development if needed
 
 # =====================================================
 # Networks

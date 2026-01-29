@@ -53,10 +53,11 @@ function formatNumber(num) {
 }
 
 /**
- * Format date in Indonesian locale
+ * Format date in Indonesian locale with Jakarta timezone
  */
 function formatDate(date) {
     return new Date(date).toLocaleDateString('id-ID', {
+        timeZone: 'Asia/Jakarta',
         day: 'numeric',
         month: 'long',
         year: 'numeric'
