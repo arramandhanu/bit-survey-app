@@ -8,9 +8,8 @@ services:
       dockerfile: Dockerfile
     container_name: survey-app
     restart: unless-stopped
-    # Port 3001 for nginx proxy (3000 used by another app)
     ports:
-      - "127.0.0.1:3001:3000"
+      - "3000:3000"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
