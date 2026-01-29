@@ -170,7 +170,6 @@ body {
 .slide-logo {
     height: 120px;
     width: auto;
-    filter: brightness(0) invert(1);
     margin-bottom: var(--spacing-lg);
     animation: fadeInUp 1s ease;
 }
@@ -294,7 +293,8 @@ body {
 .navbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 0;
     padding: var(--spacing-sm) var(--spacing-lg);
     max-width: 1600px;
     margin: 0 auto;
@@ -307,11 +307,10 @@ body {
 .logo {
     height: 50px;
     width: auto;
-    filter: brightness(0) invert(1);
 }
 
 .navbar-text {
-    text-align: right;
+    text-align: left;
     color: var(--color-white);
 }
 
