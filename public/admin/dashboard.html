@@ -372,7 +372,7 @@
             trend.forEach(item => {
                 const height = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
                 const date = new Date(item.date);
-                const dayName = date.toLocaleDateString('id-ID', { weekday: 'short' });
+                const dayName = date.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'short' });
 
                 html += `
                     <div class="trend-bar-item">
@@ -421,7 +421,7 @@
 
                 if (result.success) {
                     renderRecentTable(result.data.recent);
-                    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('id-ID');
+                    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' });
                 }
             } catch (error) {
                 console.error('Error loading recent:', error);
@@ -446,8 +446,8 @@
             };
 
             tbody.innerHTML = submissions.map(s => {
-                const time = new Date(s.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                const date = new Date(s.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                const time = new Date(s.created_at).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' });
+                const date = new Date(s.created_at).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short' });
 
                 return `
                     <tr>

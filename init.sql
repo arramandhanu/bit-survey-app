@@ -3,6 +3,10 @@
 -- MySQL 8.0
 -- =====================================================
 
+-- Set timezone to Asia/Jakarta (GMT+7)
+SET GLOBAL time_zone = '+07:00';
+SET time_zone = '+07:00';
+
 -- Create database (if not using docker-compose initialization)
 -- CREATE DATABASE IF NOT EXISTS survey_db;
 -- USE survey_db;

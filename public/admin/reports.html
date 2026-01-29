@@ -284,7 +284,7 @@
                     const date = new Date(day.date);
                     html += `
                         <tr>
-                            <td>${date.toLocaleDateString('id-ID')}</td>
+                            <td>${date.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' })}</td>
                             <td>${day.total}</td>
                             <td>${day.satisfied}</td>
                         </tr>

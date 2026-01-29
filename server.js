@@ -992,6 +992,16 @@ app.get('/admin/api/reports/csv', authMiddleware, async (req, res) => {
         let csv = headers.join(',') + '\n';
 
         rows.forEach(row => {
+            // Format date in Jakarta timezone
+            const dateFormatted = new Date(row.created_at).toLocaleString('id-ID', {
+                timeZone: 'Asia/Jakarta',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
             csv += [
                 row.id,
                 row.q1_kecepatan || '',
@@ -999,7 +1009,7 @@ app.get('/admin/api/reports/csv', authMiddleware, async (req, res) => {
                 row.q3_kejelasan || '',
                 row.q4_fasilitas || '',
                 row.q5_kepuasan || '',
-                row.created_at.toISOString()
+                `"${dateFormatted}"`
             ].join(',') + '\n';
         });
 
