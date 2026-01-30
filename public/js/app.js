@@ -1,13 +1,13 @@
 /**
  * Kiosk Survey Application - Frontend JavaScript
- * With Slideshow Welcome Screen and Dynamic Questions
+ * With Slideshow Welcome Screen
  */
 
 (function () {
     'use strict';
 
     // Configuration
-    let TOTAL_QUESTIONS = 5; // Will be updated from API
+    let TOTAL_QUESTIONS = 5;
     const COUNTDOWN_SECONDS = 5;
     const SLIDESHOW_INTERVAL = 5000; // 5 seconds per slide
     const API_BASE = window.location.origin;
@@ -19,7 +19,14 @@
     let slideshowTimer = null;
     let currentSlide = 1;
     let isTransitioning = false;
-    let questionsData = []; // Dynamic questions from API
+    let questionsData = [];
+
+    // Emoji URLs for different question types
+    const emojiMap = {
+        positive: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Star-Struck.png',
+        neutral: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Slightly%20Smiling%20Face.png',
+        negative: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Worried%20Face.png'
+    };
 
     // DOM Elements
     let progressFill;
@@ -53,6 +60,58 @@
     }
 
     /**
+     * Load questions from API
+     */
+    async function loadQuestions() {
+        try {
+            const response = await fetch(`${API_BASE}/api/questions`);
+            const result = await response.json();
+
+            if (result.success && result.questions.length > 0) {
+                questionsData = result.questions;
+                TOTAL_QUESTIONS = questionsData.length;
+                renderQuestions();
+            } else {
+                console.error('No questions found');
+            }
+        } catch (error) {
+            console.error('Error loading questions:', error);
+        }
+    }
+
+    /**
+     * Render questions dynamically
+     */
+    function renderQuestions() {
+        const container = document.getElementById('questionsContainer');
+        if (!container) return;
+
+        container.innerHTML = questionsData.map((q, index) => `
+            <section class="survey-step" id="step-${index + 1}">
+                <div class="step-content">
+                    <h2 class="question-title">${q.question_text}</h2>
+                    <p class="question-subtitle">${q.question_subtitle}</p>
+
+                    <div class="rating-grid">
+                        <button class="rating-option" data-question="${q.question_key}" data-value="sangat_baik">
+                            <img src="${emojiMap.positive}" alt="${q.option_positive}" class="option-emoji">
+                            <span class="option-label green">${q.option_positive}</span>
+                        </button>
+                        <button class="rating-option" data-question="${q.question_key}" data-value="cukup_baik">
+                            <img src="${emojiMap.neutral}" alt="${q.option_neutral}" class="option-emoji">
+                            <span class="option-label orange">${q.option_neutral}</span>
+                        </button>
+                        <button class="rating-option" data-question="${q.question_key}" data-value="kurang_baik">
+                            <img src="${emojiMap.negative}" alt="${q.option_negative}" class="option-emoji">
+                            <span class="option-label red">${q.option_negative}</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        `).join('');
+    }
+
+    /**
      * Preload images for smoother transitions
      */
     function preloadImages() {
@@ -64,101 +123,6 @@
             }
         });
     }
-
-    /**
-     * Load questions from API
-     */
-    async function loadQuestions() {
-        try {
-            const response = await fetch(`${API_BASE}/api/questions`);
-            const data = await response.json();
-
-            if (data.success && data.questions) {
-                questionsData = data.questions;
-                TOTAL_QUESTIONS = questionsData.length;
-                renderQuestions();
-                console.log(`Loaded ${TOTAL_QUESTIONS} questions from API`);
-            }
-        } catch (error) {
-            console.error('Failed to load questions:', error);
-            // Fallback to default if API fails
-            questionsData = [];
-        }
-    }
-
-    /**
-     * Get emoji URL based on emoji type
-     */
-    function getEmojiUrl(emojiType, index) {
-        const emojiMap = {
-            positive: [
-                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Star-Struck.png',
-                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Smiling%20Face%20with%20Heart-Eyes.png',
-                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Nerd%20Face.png'
-            ],
-            neutral: [
-                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Slightly%20Smiling%20Face.png',
-                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Thinking%20Face.png'
-            ],
-            negative: [
-                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Worried%20Face.png',
-                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Disappointed%20Face.png',
-                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Crying%20Face.png'
-            ]
-        };
-
-        const emojis = emojiMap[emojiType] || emojiMap.neutral;
-        return emojis[index % emojis.length];
-    }
-
-    /**
-     * Get label color class based on emoji type
-     */
-    function getLabelColor(emojiType) {
-        const colors = {
-            positive: 'green',
-            neutral: 'orange',
-            negative: 'red'
-        };
-        return colors[emojiType] || 'orange';
-    }
-
-    /**
-     * Render questions dynamically from API data
-     */
-    function renderQuestions() {
-        const container = document.getElementById('dynamicQuestionsContainer');
-        if (!container || questionsData.length === 0) return;
-
-        container.innerHTML = questionsData.map((question, qIndex) => {
-            const stepNum = qIndex + 1;
-
-            const optionsHtml = question.options.map((option, optIndex) => {
-                const emojiUrl = getEmojiUrl(option.emojiType, qIndex);
-                const labelColor = getLabelColor(option.emojiType);
-
-                return `
-                    <button class="rating-option" data-question="q${question.id}" data-value="${option.value}">
-                        <img src="${emojiUrl}" alt="${option.label}" class="option-emoji">
-                        <span class="option-label ${labelColor}">${option.label.toUpperCase()}</span>
-                    </button>
-                `;
-            }).join('');
-
-            return `
-                <section class="survey-step" id="step-${stepNum}">
-                    <div class="step-content">
-                        <h2 class="question-title">${question.text}</h2>
-                        <p class="question-subtitle">Pilih salah satu penilaian</p>
-                        <div class="rating-grid">
-                            ${optionsHtml}
-                        </div>
-                    </div>
-                </section>
-            `;
-        }).join('');
-    }
-
 
     /**
      * Add touch/click event to element
@@ -297,12 +261,25 @@
     /**
      * Start the survey
      */
-    function startSurvey() {
+    async function startSurvey() {
         if (isTransitioning) return;
 
         console.log('Starting survey...');
         stopSlideshow();
         answers = {};
+
+        // Start session - server sets HttpOnly cookie automatically
+        try {
+            const response = await fetch(`${API_BASE}/api/session`, {
+                credentials: 'include'  // Include cookies in request
+            });
+            const data = await response.json();
+            if (data.success) {
+                console.log('Session started (cookie set by server)');
+            }
+        } catch (error) {
+            console.error('Failed to start session:', error);
+        }
 
         // Show header, footer, progress bar, progress text
         if (surveyHeader) surveyHeader.classList.remove('hidden');
@@ -394,18 +371,15 @@
         siblings.forEach(sib => sib.classList.remove('selected'));
         option.classList.add('selected');
 
-        // Store answer (using question ID from data attribute)
+        // Store answer
         answers[question] = value;
 
         // Wait for animation then go to next step
         setTimeout(() => {
-            // Find current step from the section element
-            const currentSection = option.closest('.survey-step');
-            const currentStepId = currentSection ? currentSection.id : '';
-            const currentStepNum = parseInt(currentStepId.replace('step-', ''));
+            const currentQuestionNum = parseInt(question.replace('q', ''));
 
-            if (currentStepNum < TOTAL_QUESTIONS) {
-                goToStep(currentStepNum + 1);
+            if (currentQuestionNum < TOTAL_QUESTIONS) {
+                goToStep(currentQuestionNum + 1);
             } else {
                 submitSurvey();
             }
@@ -421,8 +395,9 @@
         try {
             const response = await fetch(`${API_BASE}/api/survey`, {
                 method: 'POST',
+                credentials: 'include',  // Include cookies (HttpOnly session)
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     questions: answers,

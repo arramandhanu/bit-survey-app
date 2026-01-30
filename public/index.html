@@ -4,11 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Survey Kepuasan Layanan - Kementerian Investasi/BKPM">
+    <meta name="description"
+        content="Pelayanan Perizinan Berusaha Terintegrasi Secara Elektronik - Kementerian Investasi dan Hilirisasi/BKPM">
     <meta name="theme-color" content="#0F2E5C">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Survey Kepuasan Layanan - Kementerian Investasi/BKPM</title>
+    <title>Pelayanan Perizinan Berusaha Terintegrasi Secara Elektronik - Kementerian Investasi dan Hilirisasi/BKPM
+    </title>
 
     <!-- Google Fonts - Montserrat -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,8 +39,8 @@
                 <div class="slide-content">
                     <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp"
                         alt="Logo BKPM" class="slide-logo">
-                    <h1 class="slide-title">KEMENTERIAN INVESTASI/BKPM</h1>
-                    <p class="slide-subtitle">Badan Koordinasi Penanaman Modal</p>
+                    <h1 class="slide-title">KEMENTERIAN INVESTASI<br>DAN HILIRISASI/BKPM</h1>
+                    <p class="slide-subtitle">Badan Koordinasi Penanaman Modal Republik Indonesia</p>
                 </div>
             </div>
 
@@ -67,7 +69,7 @@
                     <div class="slide-icon pulse-animation">
                         <i class="fas fa-hand-pointer"></i>
                     </div>
-                    <h1 class="slide-title">Survey Kepuasan Layanan</h1>
+                    <h1 class="slide-title">Pelayanan Perizinan Berusaha Terintegrasi Secara Elektronik</h1>
                     <p class="slide-subtitle">Sentuh layar untuk memulai survey</p>
                 </div>
             </div>
@@ -94,11 +96,12 @@
         <nav class="navbar">
             <div class="navbar-brand">
                 <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp"
-                    alt="Logo BKPM" class="logo">
+                    alt="Logo BKPM" class="logo-header">
             </div>
+            <div class="navbar-divider"></div>
             <div class="navbar-text">
-                <h1 class="institution-name">KEMENTERIAN INVESTASI/BKPM</h1>
-                <p class="institution-subtitle">Survey Kepuasan Layanan</p>
+                <h1 class="institution-name">KEMENTERIAN INVESTASI / BKPM</h1>
+                <p class="institution-subtitle">Pelayanan Perizinan Berusaha Terintegrasi Secara Elektronik</p>
             </div>
         </nav>
         <div class="accent-line"></div>
@@ -108,11 +111,18 @@
     <div class="progress-bar hidden" id="progressBar">
         <div class="progress-fill" id="progressFill"></div>
     </div>
-    <!-- Progress Text -->
-    <div class="progress-text hidden" id="progressText">Pertanyaan 1 dari 5</div>
-
-    <!-- Dynamic Questions Container - Questions will be loaded from API -->
-    <div id="dynamicQuestionsContainer"></div>
+    <!-- Dynamic Questions Container -->
+    <div id="questionsContainer">
+        <!-- Questions will be loaded dynamically from API -->
+        <section class="survey-step" id="step-loading">
+            <div class="step-content">
+                <div class="welcome-icon">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 80px; color: #0F2E5C;"></i>
+                </div>
+                <h2 class="question-title">Memuat pertanyaan...</h2>
+            </div>
+        </section>
+    </div>
 
     <!-- Thank You Screen -->
     <section class="survey-step" id="step-complete">
@@ -132,7 +142,8 @@
 
     <!-- Footer -->
     <footer class="footer hidden" id="surveyFooter">
-        <p>&copy; 2026 Kementerian Investasi/BKPM</p>
+        <p>&copy; 2026 Kementerian Investasi dan Hilirisasi/BKPM.<br>Badan Koordinasi Penanaman Modal Republik Indonesia
+        </p>
     </footer>
 
     <!-- JavaScript -->

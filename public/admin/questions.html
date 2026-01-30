@@ -4,397 +4,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelola Pertanyaan - Survey BKPM</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>Question Editor - Admin</title>
     <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        .questions-container {
+        .questions-list {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 20px;
         }
 
         .question-card {
             background: white;
             border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border-left: 4px solid #0ea5e9;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--admin-primary);
         }
 
         .question-card.inactive {
             opacity: 0.6;
-            border-left-color: #94a3b8;
+            border-left-color: #6C757D;
         }
 
         .question-header {
             display: flex;
-            align-items: flex-start;
             justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            align-items: center;
+            margin-bottom: 15px;
         }
 
-        .question-order {
-            background: #0ea5e9;
+        .question-key {
+            background: var(--admin-primary);
             color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
             font-weight: 600;
-            font-size: 0.875rem;
-            flex-shrink: 0;
+        }
+
+        .question-status {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+
+        .question-status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .question-status.inactive {
+            background: #f8d7da;
+            color: #721c24;
         }
 
         .question-text {
-            flex: 1;
-            font-size: 1rem;
-            color: #1e293b;
-            line-height: 1.5;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--admin-text);
         }
 
-        .question-badges {
+        .options-preview {
             display: flex;
-            gap: 0.5rem;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
+        .option-tag {
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
             font-weight: 500;
         }
 
-        .badge-active {
-            background: #dcfce7;
-            color: #166534;
+        .option-tag.positive {
+            background: #d4edda;
+            color: #155724;
         }
 
-        .badge-inactive {
-            background: #fee2e2;
-            color: #991b1b;
+        .option-tag.neutral {
+            background: #fff3cd;
+            color: #856404;
         }
 
-        .badge-required {
-            background: #fef3c7;
-            color: #92400e;
+        .option-tag.negative {
+            background: #f8d7da;
+            color: #721c24;
         }
 
         .question-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: 10px;
         }
 
-        .btn-icon {
-            padding: 0.5rem;
+        .btn-edit {
+            padding: 8px 18px;
+            background: var(--admin-primary);
+            color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
-            background: transparent;
+            font-size: 0.85rem;
+            transition: background 0.2s;
         }
 
-        .btn-icon:hover {
-            background: #f1f5f9;
+        .btn-edit:hover {
+            background: var(--admin-primary-light);
         }
 
-        .btn-icon.edit {
-            color: #0ea5e9;
-        }
-
-        .btn-icon.delete {
-            color: #ef4444;
-        }
-
-        .btn-icon.move {
-            color: #64748b;
-            cursor: grab;
-        }
-
-        .options-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .option-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: #f8fafc;
-            border-radius: 8px;
-            font-size: 0.875rem;
-        }
-
-        .option-emoji {
-            font-size: 1.25rem;
-        }
-
-        .option-emoji.positive::before {
-            content: '😊';
-        }
-
-        .option-emoji.neutral::before {
-            content: '😐';
-        }
-
-        .option-emoji.negative::before {
-            content: '😟';
-        }
-
-        .add-question-card {
-            background: #f8fafc;
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .add-question-card:hover {
-            border-color: #0ea5e9;
-            background: #f0f9ff;
-        }
-
-        .add-question-card i {
-            font-size: 2rem;
-            color: #0ea5e9;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Modal Styles */
-        .modal {
+        /* Modal */
+        .modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             align-items: center;
             justify-content: center;
         }
 
-        .modal.active {
+        .modal-overlay.active {
             display: flex;
         }
 
-        .modal-content {
+        .modal {
             background: white;
             border-radius: 16px;
             width: 90%;
             max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
         }
 
         .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            padding: 20px 25px;
+            background: var(--admin-primary);
+            color: white;
+            border-radius: 16px 16px 0 0;
         }
 
         .modal-header h2 {
             margin: 0;
-            font-size: 1.25rem;
-            color: #1e293b;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: #64748b;
-            cursor: pointer;
+            font-size: 1.2rem;
         }
 
         .modal-body {
-            padding: 1.5rem;
+            padding: 25px;
         }
 
         .form-group {
-            margin-bottom: 1.25rem;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #374151;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--admin-text);
         }
 
         .form-group input,
-        .form-group textarea,
-        .form-group select {
+        .form-group textarea {
             width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #d1d5db;
+            padding: 12px;
+            border: 1px solid var(--admin-border);
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-family: inherit;
         }
 
         .form-group textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 80px;
         }
 
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #0ea5e9;
-            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
-        }
-
-        .checkbox-group {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .checkbox-item input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-
-        .options-editor {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 1rem;
-        }
-
-        .options-editor h4 {
-            margin: 0 0 1rem 0;
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-
-        .option-row {
+        .options-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr auto auto;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .toggle-group {
+            display: flex;
             align-items: center;
+            gap: 10px;
         }
 
-        .option-row input,
-        .option-row select {
-            padding: 0.5rem;
-            font-size: 0.875rem;
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
         }
 
-        .btn-add-option {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px dashed #cbd5e1;
-            background: white;
-            border-radius: 8px;
-            color: #64748b;
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
             cursor: pointer;
-            margin-top: 0.5rem;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ccc;
+            border-radius: 34px;
+            transition: 0.3s;
         }
 
-        .btn-add-option:hover {
-            border-color: #0ea5e9;
-            color: #0ea5e9;
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: var(--admin-green);
+        }
+
+        .toggle-switch input:checked+.toggle-slider:before {
+            transform: translateX(24px);
         }
 
         .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid #e2e8f0;
+            padding: 15px 25px;
+            background: #f8f9fa;
             display: flex;
-            gap: 1rem;
+            gap: 10px;
             justify-content: flex-end;
+            border-radius: 0 0 16px 16px;
         }
 
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: #0ea5e9;
+        .btn-cancel {
+            padding: 10px 20px;
+            background: #6C757D;
             color: white;
-        }
-
-        .btn-primary:hover {
-            background: #0284c7;
-        }
-
-        .btn-secondary {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .btn-secondary:hover {
-            background: #e2e8f0;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .option-delete-btn {
-            background: none;
             border: none;
-            color: #ef4444;
-            cursor: pointer;
-            padding: 0.25rem;
-        }
-
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 1rem 1.5rem;
             border-radius: 8px;
-            background: #1e293b;
+            cursor: pointer;
+        }
+
+        .btn-save {
+            padding: 10px 25px;
+            background: var(--admin-green);
             color: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 2000;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .toast.success {
-            background: #059669;
-        }
-
-        .toast.error {
-            background: #dc2626;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -405,7 +275,7 @@
         <div class="sidebar-header">
             <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp" alt="Logo"
                 class="sidebar-logo">
-            <h2>Survey Admin</h2>
+            <h2>Survey Administrator</h2>
         </div>
 
         <nav class="sidebar-nav">
@@ -417,8 +287,12 @@
                 <i class="fas fa-file-lines"></i>
                 <span>Laporan</span>
             </a>
+            <a href="/admin/logs" class="nav-item">
+                <i class="fas fa-history"></i>
+                <span>Audit Log</span>
+            </a>
             <a href="/admin/questions" class="nav-item active">
-                <i class="fas fa-question-circle"></i>
+                <i class="fas fa-edit"></i>
                 <span>Pertanyaan</span>
             </a>
         </nav>
@@ -426,7 +300,7 @@
         <div class="sidebar-footer">
             <div class="user-info">
                 <i class="fas fa-user-circle"></i>
-                <span id="userName">Admin</span>
+                <span>Administrator</span>
             </div>
             <button class="btn-logout" id="logoutBtn">
                 <i class="fas fa-sign-out-alt"></i>
@@ -437,348 +311,236 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <header class="content-header">
-            <div>
-                <h1>Kelola Pertanyaan</h1>
-                <p class="subtitle">Tambah, ubah, atau hapus pertanyaan survey</p>
-            </div>
-            <div class="header-actions">
-                <button class="btn btn-primary" id="addQuestionBtn">
-                    <i class="fas fa-plus"></i> Tambah Pertanyaan
-                </button>
-            </div>
+        <header class="top-header">
+            <h1><i class="fas fa-edit"></i> Question Editor</h1>
+            <p>Kelola pertanyaan survey kiosk</p>
         </header>
 
-        <!-- Questions List -->
-        <div class="questions-container" id="questionsContainer">
-            <div class="loading-spinner" id="loadingSpinner">
-                <i class="fas fa-spinner fa-spin"></i> Memuat pertanyaan...
+        <div class="content-area">
+            <!-- Action Bar -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                <button id="resetBtn"
+                    style="padding: 10px 20px; background: #DC3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <i class="fas fa-undo"></i> Reset ke Default
+                </button>
+            </div>
+
+            <div class="questions-list" id="questionsList">
+                <p style="text-align: center; padding: 30px;">Memuat pertanyaan...</p>
             </div>
         </div>
     </main>
 
-    <!-- Question Modal -->
-    <div class="modal" id="questionModal">
-        <div class="modal-content">
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
             <div class="modal-header">
-                <h2 id="modalTitle">Tambah Pertanyaan</h2>
-                <button class="modal-close" id="modalClose">&times;</button>
+                <h2><i class="fas fa-edit"></i> Edit Pertanyaan</h2>
             </div>
             <div class="modal-body">
-                <form id="questionForm">
-                    <input type="hidden" id="questionId">
+                <input type="hidden" id="editId">
 
-                    <div class="form-group">
-                        <label for="questionText">Teks Pertanyaan</label>
-                        <textarea id="questionText" placeholder="Masukkan pertanyaan survey..." required></textarea>
-                    </div>
+                <div class="form-group">
+                    <label><i class="fas fa-question-circle"></i> Teks Pertanyaan</label>
+                    <textarea id="editText" placeholder="Masukkan pertanyaan..."></textarea>
+                </div>
 
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <label class="checkbox-item">
-                                <input type="checkbox" id="isActive" checked>
-                                <span>Aktif</span>
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox" id="isRequired" checked>
-                                <span>Wajib dijawab</span>
-                            </label>
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> Subtitle</label>
+                    <input type="text" id="editSubtitle" placeholder="Pilih salah satu penilaian">
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-list"></i> Opsi Jawaban</label>
+                    <div class="options-grid">
+                        <div>
+                            <small style="color: var(--admin-green);">Positif</small>
+                            <input type="text" id="editPositive" placeholder="SANGAT BAIK">
+                        </div>
+                        <div>
+                            <small style="color: var(--admin-orange);">Netral</small>
+                            <input type="text" id="editNeutral" placeholder="CUKUP BAIK">
+                        </div>
+                        <div>
+                            <small style="color: var(--admin-red);">Negatif</small>
+                            <input type="text" id="editNegative" placeholder="KURANG BAIK">
                         </div>
                     </div>
+                </div>
 
-                    <div class="form-group">
-                        <label>Opsi Jawaban</label>
-                        <div class="options-editor" id="optionsEditor">
-                            <div id="optionsList"></div>
-                            <button type="button" class="btn-add-option" id="addOptionBtn">
-                                <i class="fas fa-plus"></i> Tambah Opsi
-                            </button>
-                        </div>
+                <div class="form-group">
+                    <label><i class="fas fa-toggle-on"></i> Status</label>
+                    <div class="toggle-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="editActive">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span id="activeLabel">Aktif</span>
                     </div>
-                </form>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="cancelBtn">Batal</button>
-                <button type="button" class="btn btn-primary" id="saveBtn">Simpan</button>
+                <button class="btn-cancel" id="cancelBtn">Batal</button>
+                <button class="btn-save" id="saveBtn"><i class="fas fa-save"></i> Simpan</button>
             </div>
         </div>
     </div>
 
-    <!-- Toast -->
-    <div class="toast" id="toast"></div>
-
     <script>
-        // State
-        let questions = [];
-        let currentQuestion = null;
-        let token = localStorage.getItem('authToken');
-
-        // API helper
-        async function api(endpoint, options = {}) {
-            const res = await fetch(endpoint, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    ...options.headers
-                }
-            });
-            return res.json();
-        }
-
-        // Toast notification
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = `toast ${type} show`;
-            setTimeout(() => toast.classList.remove('show'), 3000);
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+            window.location.href = '/admin/login';
         }
 
         // Load questions
         async function loadQuestions() {
             try {
-                const data = await api('/admin/api/questions');
-                if (data.success) {
-                    questions = data.questions;
-                    renderQuestions();
+                const response = await fetch('/admin/api/questions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    renderQuestions(result.questions);
                 }
             } catch (error) {
-                showToast('Gagal memuat pertanyaan', 'error');
+                console.error('Error loading questions:', error);
             }
         }
 
-        // Render questions
-        function renderQuestions() {
-            const container = document.getElementById('questionsContainer');
-
-            if (questions.length === 0) {
-                container.innerHTML = `
-                    <div class="add-question-card" onclick="openModal()">
-                        <i class="fas fa-plus-circle"></i>
-                        <p>Belum ada pertanyaan. Klik untuk menambah.</p>
-                    </div>
-                `;
-                return;
-            }
+        function renderQuestions(questions) {
+            const container = document.getElementById('questionsList');
 
             container.innerHTML = questions.map(q => `
-                <div class="question-card ${q.is_active ? '' : 'inactive'}" data-id="${q.id}">
+                <div class="question-card ${q.is_active ? '' : 'inactive'}">
                     <div class="question-header">
-                        <span class="question-order">${q.question_order}</span>
-                        <div class="question-text">${q.question_text}</div>
-                        <div class="question-badges">
-                            ${q.is_active ? '<span class="badge badge-active">Aktif</span>' : '<span class="badge badge-inactive">Nonaktif</span>'}
-                            ${q.is_required ? '<span class="badge badge-required">Wajib</span>' : ''}
-                        </div>
-                        <div class="question-actions">
-                            <button class="btn-icon edit" onclick="editQuestion(${q.id})" title="Edit">
-                                <i class="fas fa-pen"></i>
-                            </button>
-                            <button class="btn-icon delete" onclick="deleteQuestion(${q.id})" title="Hapus">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+                        <span class="question-key">${q.question_key.toUpperCase()}</span>
+                        <span class="question-status ${q.is_active ? 'active' : 'inactive'}">
+                            ${q.is_active ? '✓ Aktif' : '✗ Nonaktif'}
+                        </span>
                     </div>
-                    <div class="options-container">
-                        ${q.options.map(opt => `
-                            <div class="option-item">
-                                <span class="option-emoji ${opt.emoji_type}"></span>
-                                <span>${opt.option_label}</span>
-                            </div>
-                        `).join('')}
+                    <div class="question-text">${q.question_text}</div>
+                    <div class="options-preview">
+                        <span class="option-tag positive">😊 ${q.option_positive}</span>
+                        <span class="option-tag neutral">😐 ${q.option_neutral}</span>
+                        <span class="option-tag negative">😞 ${q.option_negative}</span>
+                    </div>
+                    <div class="question-actions">
+                        <button class="btn-edit" onclick="editQuestion(${q.id})">
+                            <i class="fas fa-pencil-alt"></i> Edit
+                        </button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Modal functions
-        function openModal(question = null) {
-            currentQuestion = question;
-            const modal = document.getElementById('questionModal');
-            const title = document.getElementById('modalTitle');
-            const form = document.getElementById('questionForm');
+        // Edit question
+        async function editQuestion(id) {
+            try {
+                const response = await fetch(`/admin/api/questions/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
 
-            if (question) {
-                title.textContent = 'Edit Pertanyaan';
-                document.getElementById('questionId').value = question.id;
-                document.getElementById('questionText').value = question.question_text;
-                document.getElementById('isActive').checked = question.is_active;
-                document.getElementById('isRequired').checked = question.is_required;
-                renderOptions(question.options);
-            } else {
-                title.textContent = 'Tambah Pertanyaan';
-                form.reset();
-                document.getElementById('questionId').value = '';
-                document.getElementById('isActive').checked = true;
-                document.getElementById('isRequired').checked = true;
-                renderOptions([
-                    { option_value: 'sangat_baik', option_label: 'Sangat Baik', emoji_type: 'positive' },
-                    { option_value: 'cukup_baik', option_label: 'Cukup Baik', emoji_type: 'neutral' },
-                    { option_value: 'kurang_baik', option_label: 'Kurang Baik', emoji_type: 'negative' }
-                ]);
-            }
+                if (result.success) {
+                    const q = result.question;
+                    document.getElementById('editId').value = q.id;
+                    document.getElementById('editText').value = q.question_text;
+                    document.getElementById('editSubtitle').value = q.question_subtitle;
+                    document.getElementById('editPositive').value = q.option_positive;
+                    document.getElementById('editNeutral').value = q.option_neutral;
+                    document.getElementById('editNegative').value = q.option_negative;
+                    document.getElementById('editActive').checked = q.is_active == 1;
+                    updateActiveLabel();
 
-            modal.classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('questionModal').classList.remove('active');
-            currentQuestion = null;
-        }
-
-        function renderOptions(options) {
-            const container = document.getElementById('optionsList');
-            container.innerHTML = options.map((opt, index) => `
-                <div class="option-row" data-index="${index}">
-                    <input type="text" placeholder="Nilai (e.g. sangat_baik)" value="${opt.option_value || ''}" class="opt-value">
-                    <input type="text" placeholder="Label (e.g. Sangat Baik)" value="${opt.option_label || ''}" class="opt-label">
-                    <select class="opt-emoji">
-                        <option value="positive" ${opt.emoji_type === 'positive' ? 'selected' : ''}>😊 Positif</option>
-                        <option value="neutral" ${opt.emoji_type === 'neutral' ? 'selected' : ''}>😐 Netral</option>
-                        <option value="negative" ${opt.emoji_type === 'negative' ? 'selected' : ''}>😟 Negatif</option>
-                    </select>
-                    <button type="button" class="option-delete-btn" onclick="removeOption(${index})">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function addOption() {
-            const container = document.getElementById('optionsList');
-            const index = container.children.length;
-            const row = document.createElement('div');
-            row.className = 'option-row';
-            row.dataset.index = index;
-            row.innerHTML = `
-                <input type="text" placeholder="Nilai" class="opt-value">
-                <input type="text" placeholder="Label" class="opt-label">
-                <select class="opt-emoji">
-                    <option value="positive">😊 Positif</option>
-                    <option value="neutral" selected>😐 Netral</option>
-                    <option value="negative">😟 Negatif</option>
-                </select>
-                <button type="button" class="option-delete-btn" onclick="removeOption(${index})">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            container.appendChild(row);
-        }
-
-        function removeOption(index) {
-            const container = document.getElementById('optionsList');
-            const rows = container.querySelectorAll('.option-row');
-            if (rows.length > 1) {
-                rows[index].remove();
-            } else {
-                showToast('Minimal harus ada 1 opsi', 'error');
-            }
-        }
-
-        function getOptionsFromForm() {
-            const rows = document.querySelectorAll('#optionsList .option-row');
-            const options = [];
-            rows.forEach(row => {
-                const value = row.querySelector('.opt-value').value.trim();
-                const label = row.querySelector('.opt-label').value.trim();
-                const emoji = row.querySelector('.opt-emoji').value;
-                if (value && label) {
-                    options.push({ option_value: value, option_label: label, emoji_type: emoji });
+                    document.getElementById('editModal').classList.add('active');
                 }
-            });
-            return options;
+            } catch (error) {
+                console.error('Error loading question:', error);
+            }
+        }
+
+        function updateActiveLabel() {
+            const isActive = document.getElementById('editActive').checked;
+            document.getElementById('activeLabel').textContent = isActive ? 'Aktif' : 'Nonaktif';
         }
 
         // Save question
         async function saveQuestion() {
-            const id = document.getElementById('questionId').value;
-            const question_text = document.getElementById('questionText').value.trim();
-            const is_active = document.getElementById('isActive').checked;
-            const is_required = document.getElementById('isRequired').checked;
-            const options = getOptionsFromForm();
-
-            if (!question_text) {
-                showToast('Teks pertanyaan harus diisi', 'error');
-                return;
-            }
-
-            if (options.length === 0) {
-                showToast('Minimal harus ada 1 opsi jawaban', 'error');
-                return;
-            }
+            const id = document.getElementById('editId').value;
+            const data = {
+                question_text: document.getElementById('editText').value,
+                question_subtitle: document.getElementById('editSubtitle').value,
+                option_positive: document.getElementById('editPositive').value,
+                option_neutral: document.getElementById('editNeutral').value,
+                option_negative: document.getElementById('editNegative').value,
+                is_active: document.getElementById('editActive').checked
+            };
 
             try {
-                if (id) {
-                    // Update existing
-                    await api(`/admin/api/questions/${id}`, {
-                        method: 'PUT',
-                        body: JSON.stringify({ question_text, is_active, is_required })
-                    });
-                    showToast('Pertanyaan berhasil diperbarui');
-                } else {
-                    // Create new
-                    await api('/admin/api/questions', {
-                        method: 'POST',
-                        body: JSON.stringify({ question_text, is_active, is_required, options })
-                    });
-                    showToast('Pertanyaan berhasil ditambahkan');
-                }
+                const response = await fetch(`/admin/api/questions/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
 
-                closeModal();
-                loadQuestions();
-            } catch (error) {
-                showToast('Gagal menyimpan pertanyaan', 'error');
-            }
-        }
-
-        // Edit question
-        function editQuestion(id) {
-            const question = questions.find(q => q.id === id);
-            if (question) {
-                openModal(question);
-            }
-        }
-
-        // Delete question
-        async function deleteQuestion(id) {
-            if (!confirm('Yakin ingin menghapus pertanyaan ini?')) return;
-
-            try {
-                const result = await api(`/admin/api/questions/${id}`, { method: 'DELETE' });
                 if (result.success) {
-                    showToast(result.message);
+                    document.getElementById('editModal').classList.remove('active');
                     loadQuestions();
                 } else {
-                    showToast(result.error, 'error');
+                    alert('Gagal menyimpan: ' + result.error);
                 }
             } catch (error) {
-                showToast('Gagal menghapus pertanyaan', 'error');
+                console.error('Error saving question:', error);
+                alert('Error: ' + error.message);
             }
         }
 
         // Event listeners
-        document.getElementById('addQuestionBtn').addEventListener('click', () => openModal());
-        document.getElementById('modalClose').addEventListener('click', closeModal);
-        document.getElementById('cancelBtn').addEventListener('click', closeModal);
+        document.getElementById('editActive').addEventListener('change', updateActiveLabel);
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            document.getElementById('editModal').classList.remove('active');
+        });
         document.getElementById('saveBtn').addEventListener('click', saveQuestion);
-        document.getElementById('addOptionBtn').addEventListener('click', addOption);
-
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            if (!confirm('Apakah Anda yakin ingin mereset semua pertanyaan ke default?')) {
+                return;
+            }
+            try {
+                const response = await fetch('/admin/api/questions/reset', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Pertanyaan berhasil direset ke default!');
+                    loadQuestions();
+                } else {
+                    alert('Gagal mereset: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error resetting questions:', error);
+                alert('Error: ' + error.message);
+            }
+        });
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('adminToken');
             window.location.href = '/admin/login';
         });
 
-        // Close modal on backdrop click
-        document.getElementById('questionModal').addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) closeModal();
+        // Close modal on overlay click
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') {
+                document.getElementById('editModal').classList.remove('active');
+            }
         });
 
-        // Check auth and load data
-        if (!token) {
-            window.location.href = '/admin/login';
-        } else {
-            loadQuestions();
-        }
+        // Initial load
+        loadQuestions();
     </script>
 </body>
 
