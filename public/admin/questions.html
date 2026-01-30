@@ -115,6 +115,21 @@
             background: var(--admin-primary-light);
         }
 
+        .btn-delete {
+            padding: 8px 18px;
+            background: #DC3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
         /* Modal */
         .modal-overlay {
             display: none;
@@ -188,6 +203,22 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 15px;
+        }
+
+        .options-grid>div {
+            text-align: center;
+        }
+
+        .options-grid small {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .options-grid input {
+            text-align: center;
+            font-weight: 500;
         }
 
         .toggle-group {
@@ -266,10 +297,75 @@
             border-radius: 8px;
             cursor: pointer;
         }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            padding: 20px 30px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 10000;
+            max-width: 400px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #DC3545, #ff6b6b);
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, var(--admin-primary), #4d7c8f);
+        }
+
+        .toast i {
+            font-size: 1.5rem;
+        }
+
+        .toast-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .toast-message {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <div class="toast-content">
+            <span class="toast-title" id="toastTitle">Berhasil</span>
+            <span class="toast-message" id="toastMessage">Operasi berhasil dilakukan</span>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -318,7 +414,11 @@
 
         <div class="content-area">
             <!-- Action Bar -->
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;">
+                <button id="addQuestionBtn"
+                    style="padding: 10px 20px; background: var(--admin-primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <i class="fas fa-plus"></i> Tambah Pertanyaan
+                </button>
                 <button id="resetBtn"
                     style="padding: 10px 20px; background: #DC3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
                     <i class="fas fa-undo"></i> Reset ke Default
@@ -386,10 +486,123 @@
         </div>
     </div>
 
+    <!-- Add Question Modal -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus"></i> Tambah Pertanyaan Baru</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label><i class="fas fa-question-circle"></i> Teks Pertanyaan</label>
+                    <textarea id="addText" placeholder="Masukkan pertanyaan..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-smile"></i> Opsi Jawaban</label>
+                    <div class="options-grid">
+                        <div>
+                            <small style="color: var(--admin-green);">Positif</small>
+                            <input type="text" id="addPositive" placeholder="SANGAT BAIK" value="SANGAT BAIK">
+                        </div>
+                        <div>
+                            <small style="color: var(--admin-orange);">Netral</small>
+                            <input type="text" id="addNeutral" placeholder="CUKUP BAIK" value="CUKUP BAIK">
+                        </div>
+                        <div>
+                            <small style="color: var(--admin-red);">Negatif</small>
+                            <input type="text" id="addNegative" placeholder="KURANG BAIK" value="KURANG BAIK">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="addCancelBtn">Batal</button>
+                <button class="btn-save" id="addSaveBtn"><i class="fas fa-plus"></i> Tambah</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div class="modal-overlay" id="resetModal">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header" style="background: #DC3545;">
+                <h2><i class="fas fa-exclamation-triangle"></i> Konfirmasi Reset</h2>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 30px;">
+                <i class="fas fa-undo" style="font-size: 48px; color: #DC3545; margin-bottom: 20px;"></i>
+                <p style="font-size: 1.1rem; color: var(--admin-text); margin-bottom: 10px;">
+                    <strong>Apakah Anda yakin ingin mereset semua pertanyaan ke default?</strong>
+                </p>
+                <p style="color: #6c757d; font-size: 0.9rem;">
+                    Semua perubahan pertanyaan akan dikembalikan ke pengaturan awal.
+                </p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button class="btn-cancel" id="resetCancelBtn">Batal</button>
+                <button class="btn-save" id="resetConfirmBtn" style="background: #DC3545;">
+                    <i class="fas fa-undo"></i> Ya, Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header" style="background: #DC3545;">
+                <h2><i class="fas fa-trash"></i> Konfirmasi Hapus</h2>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 30px;">
+                <i class="fas fa-trash-alt" style="font-size: 48px; color: #DC3545; margin-bottom: 20px;"></i>
+                <p style="font-size: 1.1rem; color: var(--admin-text); margin-bottom: 10px;">
+                    <strong>Apakah Anda yakin ingin menghapus pertanyaan ini?</strong>
+                </p>
+                <p id="deleteQuestionText" style="color: #6c757d; font-size: 0.9rem; font-style: italic;"></p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button class="btn-cancel" id="deleteCancelBtn">Batal</button>
+                <button class="btn-save" id="deleteConfirmBtn" style="background: #DC3545;">
+                    <i class="fas fa-trash"></i> Ya, Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const token = localStorage.getItem('adminToken');
         if (!token) {
             window.location.href = '/admin/login';
+        }
+
+        // Toast notification function
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = toast.querySelector('i');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+
+            // Set content
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+
+            // Set icon and type
+            toast.className = 'toast ' + type;
+            if (type === 'success') {
+                toastIcon.className = 'fas fa-check-circle';
+            } else if (type === 'error') {
+                toastIcon.className = 'fas fa-exclamation-circle';
+            } else {
+                toastIcon.className = 'fas fa-info-circle';
+            }
+
+            // Show toast
+            toast.classList.add('show');
+
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         }
 
         // Load questions
@@ -428,6 +641,9 @@
                     <div class="question-actions">
                         <button class="btn-edit" onclick="editQuestion(${q.id})">
                             <i class="fas fa-pencil-alt"></i> Edit
+                        </button>
+                        <button class="btn-delete" onclick="deleteQuestion(${q.id}, '${q.question_text.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-trash"></i> Hapus
                         </button>
                     </div>
                 </div>
@@ -492,11 +708,11 @@
                     document.getElementById('editModal').classList.remove('active');
                     loadQuestions();
                 } else {
-                    alert('Gagal menyimpan: ' + result.error);
+                    showToast('Gagal', result.error, 'error');
                 }
             } catch (error) {
                 console.error('Error saving question:', error);
-                alert('Error: ' + error.message);
+                showToast('Error', error.message, 'error');
             }
         }
 
@@ -506,27 +722,45 @@
             document.getElementById('editModal').classList.remove('active');
         });
         document.getElementById('saveBtn').addEventListener('click', saveQuestion);
-        document.getElementById('resetBtn').addEventListener('click', async () => {
-            if (!confirm('Apakah Anda yakin ingin mereset semua pertanyaan ke default?')) {
-                return;
-            }
+
+        // Reset button - open modal
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            document.getElementById('resetModal').classList.add('active');
+        });
+
+        // Reset modal cancel
+        document.getElementById('resetCancelBtn').addEventListener('click', () => {
+            document.getElementById('resetModal').classList.remove('active');
+        });
+
+        // Reset modal confirm
+        document.getElementById('resetConfirmBtn').addEventListener('click', async () => {
             try {
                 const response = await fetch('/admin/api/questions/reset', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await response.json();
+                document.getElementById('resetModal').classList.remove('active');
                 if (result.success) {
-                    alert('Pertanyaan berhasil direset ke default!');
+                    showToast('Berhasil', 'Pertanyaan berhasil direset ke default!', 'success');
                     loadQuestions();
                 } else {
-                    alert('Gagal mereset: ' + result.error);
+                    showToast('Gagal', result.error, 'error');
                 }
             } catch (error) {
                 console.error('Error resetting questions:', error);
-                alert('Error: ' + error.message);
+                showToast('Error', error.message, 'error');
             }
         });
+
+        // Reset modal overlay click
+        document.getElementById('resetModal').addEventListener('click', (e) => {
+            if (e.target.id === 'resetModal') {
+                document.getElementById('resetModal').classList.remove('active');
+            }
+        });
+
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('adminToken');
             window.location.href = '/admin/login';
@@ -538,6 +772,115 @@
                 document.getElementById('editModal').classList.remove('active');
             }
         });
+
+        // Add modal close on overlay click
+        document.getElementById('addModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addModal') {
+                document.getElementById('addModal').classList.remove('active');
+            }
+        });
+
+        // Add Question button - open modal
+        document.getElementById('addQuestionBtn').addEventListener('click', () => {
+            // Reset form
+            document.getElementById('addText').value = '';
+            document.getElementById('addPositive').value = 'SANGAT BAIK';
+            document.getElementById('addNeutral').value = 'CUKUP BAIK';
+            document.getElementById('addNegative').value = 'KURANG BAIK';
+            // Show modal
+            document.getElementById('addModal').classList.add('active');
+        });
+
+        // Add modal cancel button
+        document.getElementById('addCancelBtn').addEventListener('click', () => {
+            document.getElementById('addModal').classList.remove('active');
+        });
+
+        // Add modal save button
+        document.getElementById('addSaveBtn').addEventListener('click', async () => {
+            const questionText = document.getElementById('addText').value.trim();
+            if (!questionText) {
+                showToast('Validasi', 'Teks pertanyaan tidak boleh kosong!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/api/questions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        question_text: questionText,
+                        option_positive: document.getElementById('addPositive').value.trim() || 'SANGAT BAIK',
+                        option_neutral: document.getElementById('addNeutral').value.trim() || 'CUKUP BAIK',
+                        option_negative: document.getElementById('addNegative').value.trim() || 'KURANG BAIK',
+                        is_active: true
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('addModal').classList.remove('active');
+                    showToast('Berhasil', 'Pertanyaan berhasil ditambahkan!', 'success');
+                    loadQuestions();
+                } else {
+                    showToast('Gagal', result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error adding question:', error);
+                showToast('Error', error.message, 'error');
+            }
+        });
+
+        // Delete Question function - open modal
+        let deleteQuestionId = null;
+        function deleteQuestion(id, questionText) {
+            deleteQuestionId = id;
+            document.getElementById('deleteQuestionText').textContent = `"${questionText}"`;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        // Delete modal cancel
+        document.getElementById('deleteCancelBtn').addEventListener('click', () => {
+            document.getElementById('deleteModal').classList.remove('active');
+            deleteQuestionId = null;
+        });
+
+        // Delete modal confirm
+        document.getElementById('deleteConfirmBtn').addEventListener('click', async () => {
+            if (!deleteQuestionId) return;
+
+            try {
+                const response = await fetch(`/admin/api/questions/${deleteQuestionId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                document.getElementById('deleteModal').classList.remove('active');
+                if (result.success) {
+                    showToast('Berhasil', 'Pertanyaan berhasil dihapus!', 'success');
+                    loadQuestions();
+                } else {
+                    showToast('Gagal', result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting question:', error);
+                showToast('Error', error.message, 'error');
+            }
+            deleteQuestionId = null;
+        });
+
+        // Delete modal overlay click
+        document.getElementById('deleteModal').addEventListener('click', (e) => {
+            if (e.target.id === 'deleteModal') {
+                document.getElementById('deleteModal').classList.remove('active');
+                deleteQuestionId = null;
+            }
+        });
+
+        // Make deleteQuestion global for onclick
+        window.deleteQuestion = deleteQuestion;
 
         // Initial load
         loadQuestions();

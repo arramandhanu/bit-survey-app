@@ -461,7 +461,15 @@ app.get('/admin/api/dashboard', authMiddleware, async (req, res) => {
             'SELECT COUNT(*) as month FROM surveys WHERE YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())'
         );
 
-        // Per-question breakdown
+        // Get all active questions
+        const [questions] = await pool.query(`
+            SELECT id, question_key, question_text, option_positive, option_neutral, option_negative, display_order 
+            FROM questions 
+            WHERE is_active = 1 
+            ORDER BY display_order ASC
+        `);
+
+        // Per-question breakdown (legacy - for backward compatibility)
         const [questionsBreakdown] = await pool.query(`
             SELECT 
                 -- Q1 Kecepatan
@@ -500,13 +508,34 @@ app.get('/admin/api/dashboard', authMiddleware, async (req, res) => {
 
         const breakdown = questionsBreakdown[0];
 
+        // Build dynamic questions stats array
+        const questionStats = questions.map((q, index) => {
+            const qNum = index + 1;
+            const prefix = `q${qNum}`;
+            return {
+                id: q.id,
+                key: q.question_key,
+                text: q.question_text,
+                option_positive: q.option_positive,
+                option_neutral: q.option_neutral,
+                option_negative: q.option_negative,
+                order: q.display_order,
+                stats: {
+                    sangat_baik: parseInt(breakdown[`${prefix}_sangat_baik`]) || 0,
+                    cukup_baik: parseInt(breakdown[`${prefix}_cukup_baik`]) || 0,
+                    kurang_baik: parseInt(breakdown[`${prefix}_kurang_baik`]) || 0
+                }
+            };
+        });
+
         res.json({
             success: true,
             data: {
                 total: totalResult[0].total,
                 today: todayResult[0].today,
                 thisMonth: monthResult[0].month,
-                questions: {
+                questionsList: questionStats, // New dynamic list
+                questions: { // Legacy format for backward compatibility
                     q1_kecepatan: {
                         sangat_baik: parseInt(breakdown.q1_sangat_baik) || 0,
                         cukup_baik: parseInt(breakdown.q1_cukup_baik) || 0,
@@ -607,6 +636,14 @@ app.get('/admin/api/reports/monthly', authMiddleware, async (req, res) => {
     const targetMonth = month || new Date().getMonth() + 1;
 
     try {
+        // Get all active questions
+        const [questions] = await pool.query(`
+            SELECT id, question_key, question_text, option_positive, option_neutral, option_negative, display_order 
+            FROM questions 
+            WHERE is_active = 1 
+            ORDER BY display_order ASC
+        `);
+
         // Get monthly stats
         const [stats] = await pool.query(`
             SELECT 
@@ -642,13 +679,26 @@ app.get('/admin/api/reports/monthly', authMiddleware, async (req, res) => {
             ORDER BY date ASC
         `, [targetYear, targetMonth]);
 
+        // Build dynamic questions list for frontend
+        const questionsList = questions.map((q, index) => ({
+            id: q.id,
+            key: q.question_key,
+            name: q.question_text.replace(/\?$/, '').replace(/^Bagaimana /, '').replace(/^Secara keseluruhan, bagaimana /, ''),
+            text: q.question_text,
+            prefix: `q${index + 1}`,
+            option_positive: q.option_positive,
+            option_neutral: q.option_neutral,
+            option_negative: q.option_negative
+        }));
+
         res.json({
             success: true,
             data: {
                 year: parseInt(targetYear),
                 month: parseInt(targetMonth),
                 stats: stats[0],
-                daily: dailyStats
+                daily: dailyStats,
+                questionsList: questionsList // New dynamic questions list
             }
         });
     } catch (error) {
@@ -853,6 +903,87 @@ app.post('/admin/api/questions/reset', authMiddleware, async (req, res) => {
         res.json({ success: true, message: 'Questions reset to defaults' });
     } catch (error) {
         console.error('Error resetting questions:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// CREATE new question
+app.post('/admin/api/questions', authMiddleware, async (req, res) => {
+    const { question_text, option_positive, option_neutral, option_negative, is_active } = req.body;
+
+    if (!question_text) {
+        return res.status(400).json({ success: false, error: 'Question text is required' });
+    }
+
+    try {
+        // Get next question key
+        const [maxKey] = await pool.query('SELECT MAX(CAST(SUBSTRING(question_key, 2) AS UNSIGNED)) as max_num FROM questions');
+        const nextNum = (maxKey[0].max_num || 0) + 1;
+        const questionKey = `q${nextNum}`;
+
+        // Get next order
+        const [maxOrder] = await pool.query('SELECT MAX(display_order) as max_order FROM questions');
+        const nextOrder = (maxOrder[0].max_order || 0) + 1;
+
+        const [result] = await pool.query(`
+            INSERT INTO questions (question_key, question_text, option_positive, option_neutral, option_negative, display_order, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [questionKey, question_text, option_positive || 'SANGAT BAIK', option_neutral || 'CUKUP BAIK', option_negative || 'KURANG BAIK', nextOrder, is_active !== false ? 1 : 0]);
+
+        res.json({
+            success: true,
+            message: 'Question created',
+            question: {
+                id: result.insertId,
+                question_key: questionKey,
+                question_text,
+                option_positive: option_positive || 'SANGAT BAIK',
+                option_neutral: option_neutral || 'CUKUP BAIK',
+                option_negative: option_negative || 'KURANG BAIK',
+                display_order: nextOrder,
+                is_active: is_active !== false
+            }
+        });
+    } catch (error) {
+        console.error('Error creating question:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// DELETE question
+app.delete('/admin/api/questions/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const [result] = await pool.query('DELETE FROM questions WHERE id = ?', [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, error: 'Question not found' });
+        }
+
+        res.json({ success: true, message: 'Question deleted' });
+    } catch (error) {
+        console.error('Error deleting question:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Reorder questions
+app.put('/admin/api/questions/reorder', authMiddleware, async (req, res) => {
+    const { order } = req.body; // Array of { id, order }
+
+    if (!Array.isArray(order)) {
+        return res.status(400).json({ success: false, error: 'Order must be an array' });
+    }
+
+    try {
+        for (const item of order) {
+            await pool.query('UPDATE questions SET question_order = ? WHERE id = ?', [item.order, item.id]);
+        }
+
+        res.json({ success: true, message: 'Questions reordered' });
+    } catch (error) {
+        console.error('Error reordering questions:', error);
         res.status(500).json({ success: false, error: 'Database error' });
     }
 });

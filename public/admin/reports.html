@@ -34,7 +34,7 @@
                 <span>Audit Log</span>
             </a>
             <a href="/admin/questions" class="nav-item">
-                <i class="fas fa-edit"></i>
+                <i class="fas fa-question-circle"></i>
                 <span>Pertanyaan</span>
             </a>
         </nav>
@@ -173,13 +173,18 @@
             const stats = data.stats;
             const total = stats.total || 0;
 
-            const questions = [
-                { name: 'Kecepatan Pelayanan', prefix: 'q1' },
-                { name: 'Keramahan Petugas', prefix: 'q2' },
-                { name: 'Kejelasan Informasi', prefix: 'q3' },
-                { name: 'Kondisi Fasilitas', prefix: 'q4' },
-                { name: 'Kepuasan Keseluruhan', prefix: 'q5' }
+            // Use dynamic questions list from API, fallback to legacy
+            const questions = data.questionsList || [
+                { name: 'Kecepatan Pelayanan', prefix: 'q1', option_positive: 'Sangat Baik', option_neutral: 'Cukup Baik', option_negative: 'Kurang Baik' },
+                { name: 'Keramahan Petugas', prefix: 'q2', option_positive: 'Sangat Baik', option_neutral: 'Cukup Baik', option_negative: 'Kurang Baik' },
+                { name: 'Kejelasan Informasi', prefix: 'q3', option_positive: 'Sangat Baik', option_neutral: 'Cukup Baik', option_negative: 'Kurang Baik' },
+                { name: 'Kondisi Fasilitas', prefix: 'q4', option_positive: 'Sangat Baik', option_neutral: 'Cukup Baik', option_negative: 'Kurang Baik' },
+                { name: 'Kepuasan Keseluruhan', prefix: 'q5', option_positive: 'Sangat Baik', option_neutral: 'Cukup Baik', option_negative: 'Kurang Baik' }
             ];
+
+            // Get last question stats for summary
+            const lastQ = questions[questions.length - 1];
+            const lastQPrefix = lastQ ? lastQ.prefix : 'q5';
 
             let html = `
                 <div class="report-header">
@@ -198,21 +203,21 @@
                     <div class="summary-card green">
                         <i class="fas fa-smile-beam"></i>
                         <div>
-                            <h4>${stats.q5_sangat_baik || 0}</h4>
+                            <h4>${stats[`${lastQPrefix}_sangat_baik`] || 0}</h4>
                             <p>Sangat Puas</p>
                         </div>
                     </div>
                     <div class="summary-card orange">
                         <i class="fas fa-meh"></i>
                         <div>
-                            <h4>${stats.q5_cukup_baik || 0}</h4>
+                            <h4>${stats[`${lastQPrefix}_cukup_baik`] || 0}</h4>
                             <p>Cukup Puas</p>
                         </div>
                     </div>
                     <div class="summary-card red">
                         <i class="fas fa-frown"></i>
                         <div>
-                            <h4>${stats.q5_kurang_baik || 0}</h4>
+                            <h4>${stats[`${lastQPrefix}_kurang_baik`] || 0}</h4>
                             <p>Kurang Puas</p>
                         </div>
                     </div>
@@ -232,26 +237,31 @@
                 const cukupPct = qTotal > 0 ? Math.round((cukup / qTotal) * 100) : 0;
                 const kurangPct = qTotal > 0 ? Math.round((kurang / qTotal) * 100) : 0;
 
+                // Use dynamic labels
+                const labelPositive = q.option_positive || 'Sangat Baik';
+                const labelNeutral = q.option_neutral || 'Cukup Baik';
+                const labelNegative = q.option_negative || 'Kurang Baik';
+
                 html += `
                     <div class="question-card">
                         <h4>${index + 1}. ${q.name}</h4>
                         <div class="question-stats">
                             <div class="stat-row">
-                                <span class="stat-label green">Sangat Baik</span>
+                                <span class="stat-label green">${labelPositive}</span>
                                 <div class="stat-bar-container">
                                     <div class="stat-bar green" style="width: ${sangatPct}%"></div>
                                 </div>
                                 <span class="stat-value">${sangat} (${sangatPct}%)</span>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label orange">Cukup Baik</span>
+                                <span class="stat-label orange">${labelNeutral}</span>
                                 <div class="stat-bar-container">
                                     <div class="stat-bar orange" style="width: ${cukupPct}%"></div>
                                 </div>
                                 <span class="stat-value">${cukup} (${cukupPct}%)</span>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label red">Kurang Baik</span>
+                                <span class="stat-label red">${labelNegative}</span>
                                 <div class="stat-bar-container">
                                     <div class="stat-bar red" style="width: ${kurangPct}%"></div>
                                 </div>

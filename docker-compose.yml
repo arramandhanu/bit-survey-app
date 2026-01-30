@@ -3,9 +3,7 @@ services:
   # Survey Application
   # =====================================================
   survey-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: aryaramandhanu/bit-survey-app:latest
     container_name: survey-app
     restart: unless-stopped
     ports:
