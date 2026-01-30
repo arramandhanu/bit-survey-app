@@ -134,6 +134,16 @@ Pilih metode instalasi yang sesuai dengan kebutuhan environment Anda.
     docker compose down
     ```
 
+4.  **Deploy Script** (Optional)
+    Gunakan script `deploy.sh` untuk build, push ke Docker Hub, dan update `docker-compose.yml`:
+    ```bash
+    # Development - tag dengan git SHA
+    ./deploy.sh dev
+
+    # Production - tag dengan 'latest'
+    ./deploy.sh prod
+    ```
+
 ---
 
 ## 🔗 Akses Aplikasi

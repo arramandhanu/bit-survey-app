@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const PDFDocument = require('pdfkit');
 const path = require('path');
+const fs = require('fs');
 const cookieParser = require('cookie-parser');
 
 const app = express();
@@ -1022,7 +1023,14 @@ app.get('/admin/api/reports/pdf', authMiddleware, async (req, res) => {
     ];
 
     try {
-        // Get data
+        // 1. Get Active Questions from DB
+        const [questionsList] = await pool.query(`
+            SELECT * FROM questions 
+            WHERE is_active = 1 
+            ORDER BY display_order ASC
+        `);
+
+        // 2. Get Statistics
         const [stats] = await pool.query(`
             SELECT 
                 COUNT(*) as total,
@@ -1064,35 +1072,62 @@ app.get('/admin/api/reports/pdf', authMiddleware, async (req, res) => {
         const redColor = '#DC3545';
         const grayColor = '#6C757D';
 
-        // ========== HEADER ==========
-        doc.rect(0, 0, 595, 120).fill(primaryColor);
+        // ========== HEADER - Professional text-only layout ==========
+        doc.rect(0, 0, 595, 90).fill(primaryColor);
 
+        // Logo commented out for cleaner look
+        /*
+        const logoPath = path.join(__dirname, 'public/admin/img/logo.png');
+        let logoLoaded = false;
+        try {
+            if (fs.existsSync(logoPath)) {
+                const buffer = fs.readFileSync(logoPath);
+                const isPNG = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+                if (isPNG && buffer.length > 100) {
+                    doc.image(logoPath, 20, 10, { height: 60 });
+                    logoLoaded = true;
+                }
+            }
+        } catch (logoErr) {
+            console.error('Logo loading error:', logoErr.message);
+        }
+        */
+
+        // Professional centered header text
         doc.fillColor('#FFFFFF')
             .fontSize(22).font('Helvetica-Bold')
-            .text('LAPORAN SURVEY KEPUASAN LAYANAN', 50, 35, { align: 'center' });
+            .text('LAPORAN SURVEY KEPUASAN LAYANAN', 50, 22, { width: 495, align: 'center' });
 
-        doc.fontSize(12).font('Helvetica')
-            .text('Kementerian Investasi/BKPM', 50, 65, { align: 'center' });
+        doc.fontSize(11).font('Helvetica')
+            .text('Kementerian Investasi dan Hilirisasi/BKPM', 50, 52, { width: 495, align: 'center' });
 
-        doc.fontSize(14).font('Helvetica-Bold')
-            .text(`Periode: ${monthNames[targetMonth - 1]} ${targetYear}`, 50, 90, { align: 'center' });
+        doc.fontSize(12).font('Helvetica-Bold')
+            .text(`Periode: ${monthNames[targetMonth - 1]} ${targetYear}`, 50, 70, { width: 495, align: 'center' });
 
         doc.fillColor('#000000');
-        doc.y = 140;
+        doc.y = 105;
 
         // ========== SUMMARY CARDS ==========
         const cardY = doc.y;
         const cardWidth = 120;
         const cardHeight = 70;
         const startX = 50;
+        // Determine the last question prefix for overall satisfaction summary
+        const numQuestions = questionsList.length;
+        const lastQPrefix = `q${numQuestions}`;
+
+        // Get counts from the last question (overall satisfaction)
+        const sangat = data[`${lastQPrefix}_sangat_baik`] || 0;
+        const cukup = data[`${lastQPrefix}_cukup_baik`] || 0;
+        const kurang = data[`${lastQPrefix}_kurang_baik`] || 0;
         const gap = 15;
 
         // Card backgrounds
         const cards = [
             { label: 'Total Responden', value: total, color: primaryColor },
-            { label: 'Sangat Puas', value: data.q5_sangat_baik || 0, color: greenColor },
-            { label: 'Cukup Puas', value: data.q5_cukup_baik || 0, color: orangeColor },
-            { label: 'Kurang Puas', value: data.q5_kurang_baik || 0, color: redColor }
+            { label: 'Sangat Puas', value: sangat, color: greenColor },
+            { label: 'Cukup Puas', value: cukup, color: orangeColor },
+            { label: 'Kurang Puas', value: kurang, color: redColor }
         ];
 
         cards.forEach((card, i) => {
@@ -1120,7 +1155,7 @@ app.get('/admin/api/reports/pdf', authMiddleware, async (req, res) => {
 
         // ========== SATISFACTION METER ==========
         if (total > 0) {
-            const satisfiedPct = Math.round((data.q5_sangat_baik / total) * 100);
+            const satisfiedPct = Math.round((sangat / total) * 100);
 
             doc.fontSize(12).font('Helvetica-Bold')
                 .text('TINGKAT KEPUASAN KESELURUHAN', 50, doc.y);
@@ -1155,25 +1190,28 @@ app.get('/admin/api/reports/pdf', authMiddleware, async (req, res) => {
             { name: 'Kepuasan Keseluruhan', prefix: 'q5' }
         ];
 
-        // Table header
+        // Table header - use dynamic option labels from last question
+        const lastQ = questionsList[questionsList.length - 1];
         const tableY = doc.y;
-        const colWidths = [180, 100, 100, 100];
-        const colX = [50, 230, 330, 430];
+        // Adjusted column positions for better layout
+        const colX = [50, 260, 350, 455];
+        const questionColWidth = 200; // Width for question text
 
         doc.rect(50, tableY, 495, 25).fill(primaryColor);
-        doc.fillColor('#FFFFFF').fontSize(10).font('Helvetica-Bold');
-        doc.text('Pertanyaan', colX[0] + 5, tableY + 7);
-        doc.text('Sangat Baik', colX[1] + 5, tableY + 7);
-        doc.text('Cukup Baik', colX[2] + 5, tableY + 7);
-        doc.text('Kurang Baik', colX[3] + 5, tableY + 7);
+        doc.fillColor('#FFFFFF').fontSize(9).font('Helvetica-Bold');
+        doc.text('Pertanyaan', colX[0] + 5, tableY + 7, { width: questionColWidth });
+        doc.text(lastQ ? lastQ.option_positive : 'Sangat Baik', colX[1], tableY + 7, { width: 85 });
+        doc.text(lastQ ? lastQ.option_neutral : 'Cukup Baik', colX[2], tableY + 7, { width: 85 });
+        doc.text(lastQ ? lastQ.option_negative : 'Kurang Baik', colX[3], tableY + 7, { width: 85 });
 
         doc.fillColor('#000000');
         let rowY = tableY + 25;
 
-        questions.forEach((q, index) => {
-            const sangat = data[`${q.prefix}_sangat_baik`] || 0;
-            const cukup = data[`${q.prefix}_cukup_baik`] || 0;
-            const kurang = data[`${q.prefix}_kurang_baik`] || 0;
+        // Use questionsList for dynamic rendering
+        questionsList.forEach((q, index) => {
+            const sangat = data[`${q.question_key}_sangat_baik`] || 0;
+            const cukup = data[`${q.question_key}_cukup_baik`] || 0;
+            const kurang = data[`${q.question_key}_kurang_baik`] || 0;
             const qTotal = sangat + cukup + kurang;
 
             const sangatPct = qTotal > 0 ? Math.round((sangat / qTotal) * 100) : 0;
@@ -1185,12 +1223,14 @@ app.get('/admin/api/reports/pdf', authMiddleware, async (req, res) => {
                 doc.rect(50, rowY, 495, 25).fill('#F8F9FA');
             }
 
-            doc.fillColor('#000000').fontSize(10).font('Helvetica');
-            doc.text(`${index + 1}. ${q.name}`, colX[0] + 5, rowY + 7);
+            doc.fillColor('#000000').fontSize(9).font('Helvetica');
+            // Use question_text from DB with width constraint
+            const cleanText = q.question_text.replace(/\?$/, '');
+            doc.text(`${index + 1}. ${cleanText}`, colX[0] + 5, rowY + 7, { width: questionColWidth });
 
-            doc.fillColor(greenColor).text(`${sangat} (${sangatPct}%)`, colX[1] + 5, rowY + 7);
-            doc.fillColor(orangeColor).text(`${cukup} (${cukupPct}%)`, colX[2] + 5, rowY + 7);
-            doc.fillColor(redColor).text(`${kurang} (${kurangPct}%)`, colX[3] + 5, rowY + 7);
+            doc.fillColor(greenColor).text(`${sangat} (${sangatPct}%)`, colX[1], rowY + 7, { width: 85 });
+            doc.fillColor(orangeColor).text(`${cukup} (${cukupPct}%)`, colX[2], rowY + 7, { width: 85 });
+            doc.fillColor(redColor).text(`${kurang} (${kurangPct}%)`, colX[3], rowY + 7, { width: 85 });
 
             rowY += 25;
         });
@@ -1232,6 +1272,14 @@ app.get('/admin/api/reports/csv', authMiddleware, async (req, res) => {
     const { year, month } = req.query;
 
     try {
+        // 1. Get Active Questions
+        const [questionsList] = await pool.query(`
+            SELECT * FROM questions 
+            WHERE is_active = 1 
+            ORDER BY display_order ASC
+        `);
+
+        // 2. Build query
         let query = 'SELECT * FROM surveys';
         const params = [];
 
@@ -1244,9 +1292,21 @@ app.get('/admin/api/reports/csv', authMiddleware, async (req, res) => {
 
         const [rows] = await pool.query(query, params);
 
-        // Generate CSV
-        const headers = ['ID', 'Kecepatan', 'Keramahan', 'Kejelasan', 'Fasilitas', 'Kepuasan', 'Tanggal'];
-        let csv = headers.join(',') + '\n';
+        // 3. Generate CSV with dynamic headers
+        let csv = 'ID,Tanggal';
+        questionsList.forEach(q => {
+            csv += `,"${q.question_text.replace(/"/g, '""')}"`;
+        });
+        csv += '\n';
+
+        // Column mapping for legacy DB columns
+        const colMap = {
+            'q1': 'q1_kecepatan',
+            'q2': 'q2_keramahan',
+            'q3': 'q3_kejelasan',
+            'q4': 'q4_fasilitas',
+            'q5': 'q5_kepuasan'
+        };
 
         rows.forEach(row => {
             // Format date in Jakarta timezone
@@ -1259,15 +1319,21 @@ app.get('/admin/api/reports/csv', authMiddleware, async (req, res) => {
                 minute: '2-digit',
                 second: '2-digit'
             });
-            csv += [
-                row.id,
-                row.q1_kecepatan || '',
-                row.q2_keramahan || '',
-                row.q3_kejelasan || '',
-                row.q4_fasilitas || '',
-                row.q5_kepuasan || '',
-                `"${dateFormatted}"`
-            ].join(',') + '\n';
+
+            csv += `${row.id},"${dateFormatted}"`;
+
+            // Add each question's response with proper label
+            questionsList.forEach(q => {
+                const colName = colMap[q.question_key];
+                const rawVal = row[colName];
+                let label = '-';
+                if (rawVal === 'sangat_baik') label = q.option_positive;
+                else if (rawVal === 'cukup_baik') label = q.option_neutral;
+                else if (rawVal === 'kurang_baik') label = q.option_negative;
+                csv += `,"${label}"`;
+            });
+
+            csv += '\n';
         });
 
         res.setHeader('Content-Type', 'text/csv');
@@ -1347,8 +1413,48 @@ async function start() {
     await initDatabase();
 
     app.listen(PORT, '0.0.0.0', () => {
-        console.log(`🚀 Survey Kiosk running on http://0.0.0.0:${PORT}`);
-        console.log(`📊 Admin dashboard: http://0.0.0.0:${PORT}/admin`);
+        console.log('');
+        console.log('╔══════════════════════════════════════════════════════════╗');
+        console.log('║                                                          ║');
+        console.log('║    SURVEY KEPUASAN LAYANAN - BKPM                        ║');
+        console.log('║    Bintang Inovasi Teknologi                             ║');
+        console.log('║                                                          ║');
+        console.log('╚══════════════════════════════════════════════════════════╝');
+        console.log('');
+        console.log('┌──────────────────────────────────────────────────────────┐');
+        console.log('│ Environment                                              │');
+        console.log('├──────────────────────────────────────────────────────────┤');
+        const nodeEnv = (process.env.NODE_ENV || 'development').substring(0, 20);
+        const dbHost = (process.env.DB_HOST || 'localhost').substring(0, 20);
+        const tz = (process.env.TZ || 'Asia/Jakarta').substring(0, 20);
+        console.log('│ NODE_ENV : ' + nodeEnv.padEnd(46) + '│');
+        console.log('│ PORT     : ' + String(PORT).padEnd(46) + '│');
+        console.log('│ DB_HOST  : ' + dbHost.padEnd(46) + '│');
+        console.log('│ TIMEZONE : ' + tz.padEnd(46) + '│');
+        console.log('└──────────────────────────────────────────────────────────┘');
+        console.log('');
+        console.log('┌──────────────────────────────────────────────────────────┐');
+        console.log('│ Routes                                                   │');
+        console.log('├──────────────────────────────────────────────────────────┤');
+        console.log('│ Kiosk     : http://0.0.0.0:' + String(PORT).padEnd(29) + '│');
+        console.log('│ Dashboard : http://0.0.0.0:' + (PORT + '/admin/dashboard').padEnd(29) + '│');
+        console.log('│ Reports   : http://0.0.0.0:' + (PORT + '/admin/reports').padEnd(29) + '│');
+        console.log('│ Questions : http://0.0.0.0:' + (PORT + '/admin/questions').padEnd(29) + '│');
+        console.log('│ Logs      : http://0.0.0.0:' + (PORT + '/admin/logs').padEnd(29) + '│');
+        console.log('│ Health    : http://0.0.0.0:' + (PORT + '/health').padEnd(29) + '│');
+        console.log('└──────────────────────────────────────────────────────────┘');
+        console.log('');
+        console.log('┌──────────────────────────────────────────────────────────┐');
+        console.log('│ Commands                                                 │');
+        console.log('├──────────────────────────────────────────────────────────┤');
+        console.log('│ docker compose logs -f survey-app # View logs            │');
+        console.log('│ docker compose restart survey-app # Restart app          │');
+        console.log('│ ./deploy.sh dev                   # Deploy dev           │');
+        console.log('│ ./deploy.sh prod                  # Deploy prod          │');
+        console.log('└──────────────────────────────────────────────────────────┘');
+        console.log('');
+        console.log('Server is ready and listening...');
+        console.log('');
     });
 }
 

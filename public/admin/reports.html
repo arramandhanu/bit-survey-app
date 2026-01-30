@@ -12,6 +12,8 @@
 </head>
 
 <body>
+    <!-- Toast Notification -->
+    <div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:9999;"></div>
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -311,6 +313,42 @@
             container.innerHTML = html;
         }
 
+        // Toast notification function
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                padding: 16px 24px;
+                margin-bottom: 10px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: slideIn 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                min-width: 280px;
+            `;
+
+            if (type === 'error') {
+                toast.style.background = 'linear-gradient(135deg, #DC3545, #C82333)';
+                toast.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + message;
+            } else if (type === 'success') {
+                toast.style.background = 'linear-gradient(135deg, #28A745, #218838)';
+                toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+            } else {
+                toast.style.background = 'linear-gradient(135deg, #17A2B8, #138496)';
+                toast.innerHTML = '<i class="fas fa-info-circle"></i> ' + message;
+            }
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         // Download PDF
         document.getElementById('downloadPdfBtn').addEventListener('click', async () => {
             const month = monthSelect.value;
@@ -318,14 +356,16 @@
 
             try {
                 const response = await fetchWithAuth(`/admin/api/reports/pdf?year=${year}&month=${month}`);
+                if (!response.ok) throw new Error('Server error');
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `laporan-survey-${year}-${month}.pdf`;
                 a.click();
+                showToast('PDF berhasil diunduh!', 'success');
             } catch (error) {
-                alert('Gagal mengunduh PDF');
+                showToast('Gagal mengunduh PDF. Silakan coba lagi.');
             }
         });
 
@@ -336,14 +376,16 @@
 
             try {
                 const response = await fetchWithAuth(`/admin/api/reports/csv?year=${year}&month=${month}`);
+                if (!response.ok) throw new Error('Server error');
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `survey-data-${year}-${month}.csv`;
                 a.click();
+                showToast('CSV berhasil diunduh!', 'success');
             } catch (error) {
-                alert('Gagal mengunduh CSV');
+                showToast('Gagal mengunduh CSV. Silakan coba lagi.');
             }
         });
 
