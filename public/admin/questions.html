@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Pertanyaan - Survey BKPM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        .questions-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .question-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #0ea5e9;
+        }
+
+        .question-card.inactive {
+            opacity: 0.6;
+            border-left-color: #94a3b8;
+        }
+
+        .question-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .question-order {
+            background: #0ea5e9;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .question-text {
+            flex: 1;
+            font-size: 1rem;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+
+        .question-badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-required {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .question-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+        }
+
+        .btn-icon:hover {
+            background: #f1f5f9;
+        }
+
+        .btn-icon.edit {
+            color: #0ea5e9;
+        }
+
+        .btn-icon.delete {
+            color: #ef4444;
+        }
+
+        .btn-icon.move {
+            color: #64748b;
+            cursor: grab;
+        }
+
+        .options-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+
+        .option-emoji {
+            font-size: 1.25rem;
+        }
+
+        .option-emoji.positive::before {
+            content: '😊';
+        }
+
+        .option-emoji.neutral::before {
+            content: '😐';
+        }
+
+        .option-emoji.negative::before {
+            content: '😟';
+        }
+
+        .add-question-card {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-question-card:hover {
+            border-color: #0ea5e9;
+            background: #f0f9ff;
+        }
+
+        .add-question-card i {
+            font-size: 2rem;
+            color: #0ea5e9;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: #1e293b;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .options-editor {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .options-editor h4 {
+            margin: 0 0 1rem 0;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .option-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto auto;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+
+        .option-row input,
+        .option-row select {
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-add-option {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px dashed #cbd5e1;
+            background: white;
+            border-radius: 8px;
+            color: #64748b;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .btn-add-option:hover {
+            border-color: #0ea5e9;
+            color: #0ea5e9;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #0ea5e9;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0284c7;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .option-delete-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            background: #1e293b;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: #059669;
+        }
+
+        .toast.error {
+            background: #dc2626;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp" alt="Logo"
+                class="sidebar-logo">
+            <h2>Survey Admin</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard" class="nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/admin/reports" class="nav-item">
+                <i class="fas fa-file-lines"></i>
+                <span>Laporan</span>
+            </a>
+            <a href="/admin/questions" class="nav-item active">
+                <i class="fas fa-question-circle"></i>
+                <span>Pertanyaan</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="userName">Admin</span>
+            </div>
+            <button class="btn-logout" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                Keluar
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="content-header">
+            <div>
+                <h1>Kelola Pertanyaan</h1>
+                <p class="subtitle">Tambah, ubah, atau hapus pertanyaan survey</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="addQuestionBtn">
+                    <i class="fas fa-plus"></i> Tambah Pertanyaan
+                </button>
+            </div>
+        </header>
+
+        <!-- Questions List -->
+        <div class="questions-container" id="questionsContainer">
+            <div class="loading-spinner" id="loadingSpinner">
+                <i class="fas fa-spinner fa-spin"></i> Memuat pertanyaan...
+            </div>
+        </div>
+    </main>
+
+    <!-- Question Modal -->
+    <div class="modal" id="questionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Pertanyaan</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="questionForm">
+                    <input type="hidden" id="questionId">
+
+                    <div class="form-group">
+                        <label for="questionText">Teks Pertanyaan</label>
+                        <textarea id="questionText" placeholder="Masukkan pertanyaan survey..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="isActive" checked>
+                                <span>Aktif</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="isRequired" checked>
+                                <span>Wajib dijawab</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Opsi Jawaban</label>
+                        <div class="options-editor" id="optionsEditor">
+                            <div id="optionsList"></div>
+                            <button type="button" class="btn-add-option" id="addOptionBtn">
+                                <i class="fas fa-plus"></i> Tambah Opsi
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelBtn">Batal</button>
+                <button type="button" class="btn btn-primary" id="saveBtn">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // State
+        let questions = [];
+        let currentQuestion = null;
+        let token = localStorage.getItem('authToken');
+
+        // API helper
+        async function api(endpoint, options = {}) {
+            const res = await fetch(endpoint, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    ...options.headers
+                }
+            });
+            return res.json();
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Load questions
+        async function loadQuestions() {
+            try {
+                const data = await api('/admin/api/questions');
+                if (data.success) {
+                    questions = data.questions;
+                    renderQuestions();
+                }
+            } catch (error) {
+                showToast('Gagal memuat pertanyaan', 'error');
+            }
+        }
+
+        // Render questions
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+
+            if (questions.length === 0) {
+                container.innerHTML = `
+                    <div class="add-question-card" onclick="openModal()">
+                        <i class="fas fa-plus-circle"></i>
+                        <p>Belum ada pertanyaan. Klik untuk menambah.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = questions.map(q => `
+                <div class="question-card ${q.is_active ? '' : 'inactive'}" data-id="${q.id}">
+                    <div class="question-header">
+                        <span class="question-order">${q.question_order}</span>
+                        <div class="question-text">${q.question_text}</div>
+                        <div class="question-badges">
+                            ${q.is_active ? '<span class="badge badge-active">Aktif</span>' : '<span class="badge badge-inactive">Nonaktif</span>'}
+                            ${q.is_required ? '<span class="badge badge-required">Wajib</span>' : ''}
+                        </div>
+                        <div class="question-actions">
+                            <button class="btn-icon edit" onclick="editQuestion(${q.id})" title="Edit">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="btn-icon delete" onclick="deleteQuestion(${q.id})" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="options-container">
+                        ${q.options.map(opt => `
+                            <div class="option-item">
+                                <span class="option-emoji ${opt.emoji_type}"></span>
+                                <span>${opt.option_label}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Modal functions
+        function openModal(question = null) {
+            currentQuestion = question;
+            const modal = document.getElementById('questionModal');
+            const title = document.getElementById('modalTitle');
+            const form = document.getElementById('questionForm');
+
+            if (question) {
+                title.textContent = 'Edit Pertanyaan';
+                document.getElementById('questionId').value = question.id;
+                document.getElementById('questionText').value = question.question_text;
+                document.getElementById('isActive').checked = question.is_active;
+                document.getElementById('isRequired').checked = question.is_required;
+                renderOptions(question.options);
+            } else {
+                title.textContent = 'Tambah Pertanyaan';
+                form.reset();
+                document.getElementById('questionId').value = '';
+                document.getElementById('isActive').checked = true;
+                document.getElementById('isRequired').checked = true;
+                renderOptions([
+                    { option_value: 'sangat_baik', option_label: 'Sangat Baik', emoji_type: 'positive' },
+                    { option_value: 'cukup_baik', option_label: 'Cukup Baik', emoji_type: 'neutral' },
+                    { option_value: 'kurang_baik', option_label: 'Kurang Baik', emoji_type: 'negative' }
+                ]);
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('questionModal').classList.remove('active');
+            currentQuestion = null;
+        }
+
+        function renderOptions(options) {
+            const container = document.getElementById('optionsList');
+            container.innerHTML = options.map((opt, index) => `
+                <div class="option-row" data-index="${index}">
+                    <input type="text" placeholder="Nilai (e.g. sangat_baik)" value="${opt.option_value || ''}" class="opt-value">
+                    <input type="text" placeholder="Label (e.g. Sangat Baik)" value="${opt.option_label || ''}" class="opt-label">
+                    <select class="opt-emoji">
+                        <option value="positive" ${opt.emoji_type === 'positive' ? 'selected' : ''}>😊 Positif</option>
+                        <option value="neutral" ${opt.emoji_type === 'neutral' ? 'selected' : ''}>😐 Netral</option>
+                        <option value="negative" ${opt.emoji_type === 'negative' ? 'selected' : ''}>😟 Negatif</option>
+                    </select>
+                    <button type="button" class="option-delete-btn" onclick="removeOption(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addOption() {
+            const container = document.getElementById('optionsList');
+            const index = container.children.length;
+            const row = document.createElement('div');
+            row.className = 'option-row';
+            row.dataset.index = index;
+            row.innerHTML = `
+                <input type="text" placeholder="Nilai" class="opt-value">
+                <input type="text" placeholder="Label" class="opt-label">
+                <select class="opt-emoji">
+                    <option value="positive">😊 Positif</option>
+                    <option value="neutral" selected>😐 Netral</option>
+                    <option value="negative">😟 Negatif</option>
+                </select>
+                <button type="button" class="option-delete-btn" onclick="removeOption(${index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(row);
+        }
+
+        function removeOption(index) {
+            const container = document.getElementById('optionsList');
+            const rows = container.querySelectorAll('.option-row');
+            if (rows.length > 1) {
+                rows[index].remove();
+            } else {
+                showToast('Minimal harus ada 1 opsi', 'error');
+            }
+        }
+
+        function getOptionsFromForm() {
+            const rows = document.querySelectorAll('#optionsList .option-row');
+            const options = [];
+            rows.forEach(row => {
+                const value = row.querySelector('.opt-value').value.trim();
+                const label = row.querySelector('.opt-label').value.trim();
+                const emoji = row.querySelector('.opt-emoji').value;
+                if (value && label) {
+                    options.push({ option_value: value, option_label: label, emoji_type: emoji });
+                }
+            });
+            return options;
+        }
+
+        // Save question
+        async function saveQuestion() {
+            const id = document.getElementById('questionId').value;
+            const question_text = document.getElementById('questionText').value.trim();
+            const is_active = document.getElementById('isActive').checked;
+            const is_required = document.getElementById('isRequired').checked;
+            const options = getOptionsFromForm();
+
+            if (!question_text) {
+                showToast('Teks pertanyaan harus diisi', 'error');
+                return;
+            }
+
+            if (options.length === 0) {
+                showToast('Minimal harus ada 1 opsi jawaban', 'error');
+                return;
+            }
+
+            try {
+                if (id) {
+                    // Update existing
+                    await api(`/admin/api/questions/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ question_text, is_active, is_required })
+                    });
+                    showToast('Pertanyaan berhasil diperbarui');
+                } else {
+                    // Create new
+                    await api('/admin/api/questions', {
+                        method: 'POST',
+                        body: JSON.stringify({ question_text, is_active, is_required, options })
+                    });
+                    showToast('Pertanyaan berhasil ditambahkan');
+                }
+
+                closeModal();
+                loadQuestions();
+            } catch (error) {
+                showToast('Gagal menyimpan pertanyaan', 'error');
+            }
+        }
+
+        // Edit question
+        function editQuestion(id) {
+            const question = questions.find(q => q.id === id);
+            if (question) {
+                openModal(question);
+            }
+        }
+
+        // Delete question
+        async function deleteQuestion(id) {
+            if (!confirm('Yakin ingin menghapus pertanyaan ini?')) return;
+
+            try {
+                const result = await api(`/admin/api/questions/${id}`, { method: 'DELETE' });
+                if (result.success) {
+                    showToast(result.message);
+                    loadQuestions();
+                } else {
+                    showToast(result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Gagal menghapus pertanyaan', 'error');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('addQuestionBtn').addEventListener('click', () => openModal());
+        document.getElementById('modalClose').addEventListener('click', closeModal);
+        document.getElementById('cancelBtn').addEventListener('click', closeModal);
+        document.getElementById('saveBtn').addEventListener('click', saveQuestion);
+        document.getElementById('addOptionBtn').addEventListener('click', addOption);
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('authToken');
+            window.location.href = '/admin/login';
+        });
+
+        // Close modal on backdrop click
+        document.getElementById('questionModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) closeModal();
+        });
+
+        // Check auth and load data
+        if (!token) {
+            window.location.href = '/admin/login';
+        } else {
+            loadQuestions();
+        }
+    </script>
+</body>
+
+</html>

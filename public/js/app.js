@@ -1,13 +1,13 @@
 /**
  * Kiosk Survey Application - Frontend JavaScript
- * With Slideshow Welcome Screen
+ * With Slideshow Welcome Screen and Dynamic Questions
  */
 
 (function () {
     'use strict';
 
     // Configuration
-    const TOTAL_QUESTIONS = 5;
+    let TOTAL_QUESTIONS = 5; // Will be updated from API
     const COUNTDOWN_SECONDS = 5;
     const SLIDESHOW_INTERVAL = 5000; // 5 seconds per slide
     const API_BASE = window.location.origin;
@@ -19,6 +19,7 @@
     let slideshowTimer = null;
     let currentSlide = 1;
     let isTransitioning = false;
+    let questionsData = []; // Dynamic questions from API
 
     // DOM Elements
     let progressFill;
@@ -32,7 +33,7 @@
     /**
      * Initialize the application
      */
-    function init() {
+    async function init() {
         // Get DOM elements
         progressFill = document.getElementById('progressFill');
         progressText = document.getElementById('progressText');
@@ -41,6 +42,9 @@
         surveyHeader = document.getElementById('surveyHeader');
         surveyFooter = document.getElementById('surveyFooter');
         touchOverlay = document.getElementById('touchToStart');
+
+        // Load questions from API
+        await loadQuestions();
 
         bindEvents();
         startSlideshow();
@@ -60,6 +64,101 @@
             }
         });
     }
+
+    /**
+     * Load questions from API
+     */
+    async function loadQuestions() {
+        try {
+            const response = await fetch(`${API_BASE}/api/questions`);
+            const data = await response.json();
+
+            if (data.success && data.questions) {
+                questionsData = data.questions;
+                TOTAL_QUESTIONS = questionsData.length;
+                renderQuestions();
+                console.log(`Loaded ${TOTAL_QUESTIONS} questions from API`);
+            }
+        } catch (error) {
+            console.error('Failed to load questions:', error);
+            // Fallback to default if API fails
+            questionsData = [];
+        }
+    }
+
+    /**
+     * Get emoji URL based on emoji type
+     */
+    function getEmojiUrl(emojiType, index) {
+        const emojiMap = {
+            positive: [
+                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Star-Struck.png',
+                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Smiling%20Face%20with%20Heart-Eyes.png',
+                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Nerd%20Face.png'
+            ],
+            neutral: [
+                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Slightly%20Smiling%20Face.png',
+                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Thinking%20Face.png'
+            ],
+            negative: [
+                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Worried%20Face.png',
+                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Disappointed%20Face.png',
+                'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Crying%20Face.png'
+            ]
+        };
+
+        const emojis = emojiMap[emojiType] || emojiMap.neutral;
+        return emojis[index % emojis.length];
+    }
+
+    /**
+     * Get label color class based on emoji type
+     */
+    function getLabelColor(emojiType) {
+        const colors = {
+            positive: 'green',
+            neutral: 'orange',
+            negative: 'red'
+        };
+        return colors[emojiType] || 'orange';
+    }
+
+    /**
+     * Render questions dynamically from API data
+     */
+    function renderQuestions() {
+        const container = document.getElementById('dynamicQuestionsContainer');
+        if (!container || questionsData.length === 0) return;
+
+        container.innerHTML = questionsData.map((question, qIndex) => {
+            const stepNum = qIndex + 1;
+
+            const optionsHtml = question.options.map((option, optIndex) => {
+                const emojiUrl = getEmojiUrl(option.emojiType, qIndex);
+                const labelColor = getLabelColor(option.emojiType);
+
+                return `
+                    <button class="rating-option" data-question="q${question.id}" data-value="${option.value}">
+                        <img src="${emojiUrl}" alt="${option.label}" class="option-emoji">
+                        <span class="option-label ${labelColor}">${option.label.toUpperCase()}</span>
+                    </button>
+                `;
+            }).join('');
+
+            return `
+                <section class="survey-step" id="step-${stepNum}">
+                    <div class="step-content">
+                        <h2 class="question-title">${question.text}</h2>
+                        <p class="question-subtitle">Pilih salah satu penilaian</p>
+                        <div class="rating-grid">
+                            ${optionsHtml}
+                        </div>
+                    </div>
+                </section>
+            `;
+        }).join('');
+    }
+
 
     /**
      * Add touch/click event to element
@@ -295,15 +394,18 @@
         siblings.forEach(sib => sib.classList.remove('selected'));
         option.classList.add('selected');
 
-        // Store answer
+        // Store answer (using question ID from data attribute)
         answers[question] = value;
 
         // Wait for animation then go to next step
         setTimeout(() => {
-            const currentQuestionNum = parseInt(question.replace('q', ''));
+            // Find current step from the section element
+            const currentSection = option.closest('.survey-step');
+            const currentStepId = currentSection ? currentSection.id : '';
+            const currentStepNum = parseInt(currentStepId.replace('step-', ''));
 
-            if (currentQuestionNum < TOTAL_QUESTIONS) {
-                goToStep(currentQuestionNum + 1);
+            if (currentStepNum < TOTAL_QUESTIONS) {
+                goToStep(currentStepNum + 1);
             } else {
                 submitSurvey();
             }

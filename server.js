@@ -139,43 +139,97 @@ app.get('/health', async (req, res) => {
 // SURVEY ENDPOINTS (Public Kiosk)
 // =====================================================
 
-// Submit survey (from kiosk)
+// Submit survey (from kiosk) - Uses new dynamic schema
 app.post('/api/survey', async (req, res) => {
-    const { questions } = req.body;
+    const { questions, answers } = req.body;
 
-    if (!questions || typeof questions !== 'object') {
+    // Support both old format (questions) and new format (answers)
+    const surveyAnswers = answers || questions;
+
+    if (!surveyAnswers || typeof surveyAnswers !== 'object') {
         return res.status(400).json({
             success: false,
             error: 'Invalid survey data'
         });
     }
 
+    const connection = await pool.getConnection();
+
     try {
-        const [result] = await pool.query(
+        await connection.beginTransaction();
+
+        const ipAddress = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || req.connection?.remoteAddress || 'unknown';
+        const userAgent = req.headers['user-agent'] || 'unknown';
+
+        // 1. Create submission header
+        const [submissionResult] = await connection.query(
+            'INSERT INTO survey_submissions (ip_address, user_agent) VALUES (?, ?)',
+            [ipAddress, userAgent]
+        );
+        const submissionId = submissionResult.insertId;
+
+        // 2. Insert individual responses
+        // New format: { questionId: optionId } or { questionId: optionValue }
+        for (const [key, value] of Object.entries(surveyAnswers)) {
+            // Extract question ID (handle both "q1" and "1" formats)
+            const questionId = parseInt(key.replace('q', ''));
+
+            if (isNaN(questionId)) continue;
+
+            // Value can be option_id (number) or option_value (string)
+            let optionId;
+            if (typeof value === 'number') {
+                optionId = value;
+            } else {
+                // Look up option_id by option_value
+                const [optionRows] = await connection.query(
+                    'SELECT id FROM answer_options WHERE question_id = ? AND option_value = ?',
+                    [questionId, value]
+                );
+                if (optionRows.length > 0) {
+                    optionId = optionRows[0].id;
+                }
+            }
+
+            if (optionId) {
+                await connection.query(
+                    'INSERT INTO survey_responses (submission_id, question_id, option_id) VALUES (?, ?, ?)',
+                    [submissionId, questionId, optionId]
+                );
+            }
+        }
+
+        // 3. Also insert into legacy surveys table for backward compatibility
+        await connection.query(
             `INSERT INTO surveys (q1_kecepatan, q2_keramahan, q3_kejelasan, q4_fasilitas, q5_kepuasan, user_agent, ip_address)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
-                questions.q1 || null,
-                questions.q2 || null,
-                questions.q3 || null,
-                questions.q4 || null,
-                questions.q5 || null,
-                req.headers['user-agent'] || 'unknown',
-                req.ip || req.connection?.remoteAddress || 'unknown'
+                surveyAnswers.q1 || surveyAnswers['1'] || null,
+                surveyAnswers.q2 || surveyAnswers['2'] || null,
+                surveyAnswers.q3 || surveyAnswers['3'] || null,
+                surveyAnswers.q4 || surveyAnswers['4'] || null,
+                surveyAnswers.q5 || surveyAnswers['5'] || null,
+                userAgent,
+                ipAddress
             ]
         );
+
+        await connection.commit();
 
         res.status(201).json({
             success: true,
             message: 'Terima kasih atas penilaian Anda!',
-            id: result.insertId
+            submissionId: submissionId
         });
     } catch (error) {
+        await connection.rollback();
         console.error('Error saving survey:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to save survey'
         });
+    } finally {
+        connection.release();
     }
 });
 
@@ -198,6 +252,63 @@ app.get('/api/survey/stats', async (req, res) => {
         });
     } catch (error) {
         console.error('Error getting stats:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// =====================================================
+// PUBLIC API: Get all active questions with options
+// =====================================================
+app.get('/api/questions', async (req, res) => {
+    try {
+        // Get active questions ordered by question_order
+        const [questions] = await pool.query(`
+            SELECT id, question_text, question_order, is_required
+            FROM questions 
+            WHERE is_active = TRUE 
+            ORDER BY question_order ASC
+        `);
+
+        // Get all options for active questions
+        const [options] = await pool.query(`
+            SELECT ao.id, ao.question_id, ao.option_value, ao.option_label, ao.option_order, ao.emoji_type
+            FROM answer_options ao
+            INNER JOIN questions q ON ao.question_id = q.id
+            WHERE q.is_active = TRUE
+            ORDER BY ao.question_id, ao.option_order ASC
+        `);
+
+        // Group options by question_id
+        const optionsByQuestion = {};
+        options.forEach(opt => {
+            if (!optionsByQuestion[opt.question_id]) {
+                optionsByQuestion[opt.question_id] = [];
+            }
+            optionsByQuestion[opt.question_id].push({
+                id: opt.id,
+                value: opt.option_value,
+                label: opt.option_label,
+                order: opt.option_order,
+                emojiType: opt.emoji_type
+            });
+        });
+
+        // Combine questions with their options
+        const result = questions.map(q => ({
+            id: q.id,
+            text: q.question_text,
+            order: q.question_order,
+            required: q.is_required,
+            options: optionsByQuestion[q.id] || []
+        }));
+
+        res.json({
+            success: true,
+            questions: result,
+            totalQuestions: result.length
+        });
+    } catch (error) {
+        console.error('Error getting questions:', error);
         res.status(500).json({ success: false, error: 'Database error' });
     }
 });
@@ -265,6 +376,278 @@ app.post('/admin/login', async (req, res) => {
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
+// =====================================================
+// ADMIN: Question Management (CRUD)
+// =====================================================
+
+// Get all questions (admin)
+app.get('/admin/api/questions', authMiddleware, async (req, res) => {
+    try {
+        const [questions] = await pool.query(`
+            SELECT id, question_text, question_order, is_active, is_required, created_at, updated_at
+            FROM questions 
+            ORDER BY question_order ASC
+        `);
+
+        const [options] = await pool.query(`
+            SELECT id, question_id, option_value, option_label, option_order, emoji_type
+            FROM answer_options
+            ORDER BY question_id, option_order ASC
+        `);
+
+        // Group options by question
+        const optionsByQuestion = {};
+        options.forEach(opt => {
+            if (!optionsByQuestion[opt.question_id]) {
+                optionsByQuestion[opt.question_id] = [];
+            }
+            optionsByQuestion[opt.question_id].push(opt);
+        });
+
+        const result = questions.map(q => ({
+            ...q,
+            options: optionsByQuestion[q.id] || []
+        }));
+
+        res.json({ success: true, questions: result });
+    } catch (error) {
+        console.error('Error getting questions:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Create question
+app.post('/admin/api/questions', authMiddleware, async (req, res) => {
+    const { question_text, is_active = true, is_required = true, options = [] } = req.body;
+
+    if (!question_text) {
+        return res.status(400).json({ success: false, error: 'Question text is required' });
+    }
+
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // Get next order number
+        const [maxOrder] = await connection.query('SELECT MAX(question_order) as max_order FROM questions');
+        const nextOrder = (maxOrder[0].max_order || 0) + 1;
+
+        // Insert question
+        const [result] = await connection.query(
+            'INSERT INTO questions (question_text, question_order, is_active, is_required) VALUES (?, ?, ?, ?)',
+            [question_text, nextOrder, is_active, is_required]
+        );
+        const questionId = result.insertId;
+
+        // Insert options if provided
+        if (options.length > 0) {
+            for (let i = 0; i < options.length; i++) {
+                const opt = options[i];
+                await connection.query(
+                    'INSERT INTO answer_options (question_id, option_value, option_label, option_order, emoji_type) VALUES (?, ?, ?, ?, ?)',
+                    [questionId, opt.option_value, opt.option_label, i + 1, opt.emoji_type || 'neutral']
+                );
+            }
+        } else {
+            // Add default options
+            await connection.query(
+                'INSERT INTO answer_options (question_id, option_value, option_label, option_order, emoji_type) VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)',
+                [
+                    questionId, 'sangat_baik', 'Sangat Baik', 1, 'positive',
+                    questionId, 'cukup_baik', 'Cukup Baik', 2, 'neutral',
+                    questionId, 'kurang_baik', 'Kurang Baik', 3, 'negative'
+                ]
+            );
+        }
+
+        await connection.commit();
+        res.status(201).json({ success: true, questionId, message: 'Question created' });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error creating question:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    } finally {
+        connection.release();
+    }
+});
+
+// Update question
+app.put('/admin/api/questions/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { question_text, is_active, is_required } = req.body;
+
+    try {
+        const updates = [];
+        const values = [];
+
+        if (question_text !== undefined) {
+            updates.push('question_text = ?');
+            values.push(question_text);
+        }
+        if (is_active !== undefined) {
+            updates.push('is_active = ?');
+            values.push(is_active);
+        }
+        if (is_required !== undefined) {
+            updates.push('is_required = ?');
+            values.push(is_required);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ success: false, error: 'No updates provided' });
+        }
+
+        values.push(id);
+        await pool.query(`UPDATE questions SET ${updates.join(', ')} WHERE id = ?`, values);
+
+        res.json({ success: true, message: 'Question updated' });
+    } catch (error) {
+        console.error('Error updating question:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Delete question
+app.delete('/admin/api/questions/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Check if question has responses
+        const [responses] = await pool.query(
+            'SELECT COUNT(*) as count FROM survey_responses WHERE question_id = ?',
+            [id]
+        );
+
+        if (responses[0].count > 0) {
+            // Soft delete - just deactivate
+            await pool.query('UPDATE questions SET is_active = FALSE WHERE id = ?', [id]);
+            res.json({ success: true, message: 'Question deactivated (has responses)' });
+        } else {
+            // Hard delete - no responses
+            await pool.query('DELETE FROM questions WHERE id = ?', [id]);
+            res.json({ success: true, message: 'Question deleted' });
+        }
+    } catch (error) {
+        console.error('Error deleting question:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Reorder questions
+app.put('/admin/api/questions/reorder', authMiddleware, async (req, res) => {
+    const { order } = req.body; // Array of { id, order }
+
+    if (!order || !Array.isArray(order)) {
+        return res.status(400).json({ success: false, error: 'Invalid order data' });
+    }
+
+    try {
+        for (const item of order) {
+            await pool.query('UPDATE questions SET question_order = ? WHERE id = ?', [item.order, item.id]);
+        }
+        res.json({ success: true, message: 'Questions reordered' });
+    } catch (error) {
+        console.error('Error reordering questions:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// =====================================================
+// ADMIN: Answer Option Management
+// =====================================================
+
+// Add option to question
+app.post('/admin/api/questions/:questionId/options', authMiddleware, async (req, res) => {
+    const { questionId } = req.params;
+    const { option_value, option_label, emoji_type = 'neutral' } = req.body;
+
+    if (!option_value || !option_label) {
+        return res.status(400).json({ success: false, error: 'Option value and label required' });
+    }
+
+    try {
+        // Get next order
+        const [maxOrder] = await pool.query(
+            'SELECT MAX(option_order) as max_order FROM answer_options WHERE question_id = ?',
+            [questionId]
+        );
+        const nextOrder = (maxOrder[0].max_order || 0) + 1;
+
+        const [result] = await pool.query(
+            'INSERT INTO answer_options (question_id, option_value, option_label, option_order, emoji_type) VALUES (?, ?, ?, ?, ?)',
+            [questionId, option_value, option_label, nextOrder, emoji_type]
+        );
+
+        res.status(201).json({ success: true, optionId: result.insertId, message: 'Option added' });
+    } catch (error) {
+        console.error('Error adding option:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Update option
+app.put('/admin/api/options/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { option_value, option_label, emoji_type } = req.body;
+
+    try {
+        const updates = [];
+        const values = [];
+
+        if (option_value !== undefined) {
+            updates.push('option_value = ?');
+            values.push(option_value);
+        }
+        if (option_label !== undefined) {
+            updates.push('option_label = ?');
+            values.push(option_label);
+        }
+        if (emoji_type !== undefined) {
+            updates.push('emoji_type = ?');
+            values.push(emoji_type);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ success: false, error: 'No updates provided' });
+        }
+
+        values.push(id);
+        await pool.query(`UPDATE answer_options SET ${updates.join(', ')} WHERE id = ?`, values);
+
+        res.json({ success: true, message: 'Option updated' });
+    } catch (error) {
+        console.error('Error updating option:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+});
+
+// Delete option
+app.delete('/admin/api/options/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Check if option has responses
+        const [responses] = await pool.query(
+            'SELECT COUNT(*) as count FROM survey_responses WHERE option_id = ?',
+            [id]
+        );
+
+        if (responses[0].count > 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Cannot delete option with existing responses'
+            });
+        }
+
+        await pool.query('DELETE FROM answer_options WHERE id = ?', [id]);
+        res.json({ success: true, message: 'Option deleted' });
+    } catch (error) {
+        console.error('Error deleting option:', error);
+        res.status(500).json({ success: false, error: 'Database error' });
     }
 });
 
@@ -613,6 +996,10 @@ app.get('/admin/dashboard', (req, res) => {
 
 app.get('/admin/reports', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'reports.html'));
+});
+
+app.get('/admin/questions', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin', 'questions.html'));
 });
 
 // =====================================================
