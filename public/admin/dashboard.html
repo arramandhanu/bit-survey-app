@@ -134,36 +134,9 @@
         <!-- Per-Question Breakdown -->
         <div class="questions-section">
             <h2><i class="fas fa-list-check"></i> Breakdown Per Pertanyaan</h2>
-            <div class="questions-grid">
-                <!-- Q1 Kecepatan -->
-                <div class="question-card">
-                    <h4>Q1. Kecepatan Pelayanan</h4>
-                    <div class="question-bars" id="q1Bars"></div>
-                </div>
-
-                <!-- Q2 Keramahan -->
-                <div class="question-card">
-                    <h4>Q2. Keramahan Petugas</h4>
-                    <div class="question-bars" id="q2Bars"></div>
-                </div>
-
-                <!-- Q3 Kejelasan -->
-                <div class="question-card">
-                    <h4>Q3. Kejelasan Informasi</h4>
-                    <div class="question-bars" id="q3Bars"></div>
-                </div>
-
-                <!-- Q4 Fasilitas -->
-                <div class="question-card">
-                    <h4>Q4. Fasilitas</h4>
-                    <div class="question-bars" id="q4Bars"></div>
-                </div>
-
-                <!-- Q5 Kepuasan -->
-                <div class="question-card">
-                    <h4>Q5. Kepuasan Keseluruhan</h4>
-                    <div class="question-bars" id="q5Bars"></div>
-                </div>
+            <div class="questions-grid" id="questionsGrid">
+                <!-- Questions will be loaded dynamically -->
+                <p style="text-align: center; padding: 30px; color: #6c757d;">Memuat pertanyaan...</p>
             </div>
         </div>
 
@@ -209,18 +182,14 @@
             <div class="recent-table-container">
                 <table class="recent-table">
                     <thead>
-                        <tr>
+                        <tr id="recentTableHead">
                             <th>Waktu</th>
-                            <th>Q1</th>
-                            <th>Q2</th>
-                            <th>Q3</th>
-                            <th>Q4</th>
-                            <th>Q5</th>
+                            <!-- Question headers will be loaded dynamically -->
                         </tr>
                     </thead>
                     <tbody id="recentTableBody">
                         <tr>
-                            <td colspan="6" class="loading-row">Memuat data...</td>
+                            <td colspan="10" class="loading-row">Memuat data...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -283,16 +252,18 @@
                     document.getElementById('todaySurveys').textContent = data.today.toLocaleString();
                     document.getElementById('monthSurveys').textContent = data.thisMonth.toLocaleString();
 
+                    // Use dynamic questionsList
+                    const questionsList = data.questionsList || [];
+
                     // Calculate totals across all questions
-                    const questions = data.questions;
                     let totalSangatBaik = 0;
                     let totalCukupBaik = 0;
                     let totalKurangBaik = 0;
 
-                    Object.values(questions).forEach(q => {
-                        totalSangatBaik += q.sangat_baik || 0;
-                        totalCukupBaik += q.cukup_baik || 0;
-                        totalKurangBaik += q.kurang_baik || 0;
+                    questionsList.forEach(q => {
+                        totalSangatBaik += q.stats.sangat_baik || 0;
+                        totalCukupBaik += q.stats.cukup_baik || 0;
+                        totalKurangBaik += q.stats.kurang_baik || 0;
                     });
 
                     // Update total summary
@@ -300,37 +271,72 @@
                     document.getElementById('totalCukupBaik').textContent = totalCukupBaik;
                     document.getElementById('totalKurangBaik').textContent = totalKurangBaik;
 
-                    // Satisfaction rate based on Q5
-                    const q5 = questions.q5_kepuasan;
-                    const q5Total = q5.sangat_baik + q5.cukup_baik + q5.kurang_baik;
-                    const rate = q5Total > 0 ? Math.round((q5.sangat_baik / q5Total) * 100) : 0;
-                    document.getElementById('satisfactionRate').textContent = rate + '%';
+                    // Satisfaction rate based on last question
+                    const lastQ = questionsList[questionsList.length - 1];
+                    if (lastQ) {
+                        const lastTotal = lastQ.stats.sangat_baik + lastQ.stats.cukup_baik + lastQ.stats.kurang_baik;
+                        const rate = lastTotal > 0 ? Math.round((lastQ.stats.sangat_baik / lastTotal) * 100) : 0;
+                        document.getElementById('satisfactionRate').textContent = rate + '%';
+                    }
 
-                    // Render per-question bars
-                    renderQuestionBars('q1Bars', questions.q1_kecepatan);
-                    renderQuestionBars('q2Bars', questions.q2_keramahan);
-                    renderQuestionBars('q3Bars', questions.q3_kejelasan);
-                    renderQuestionBars('q4Bars', questions.q4_fasilitas);
-                    renderQuestionBars('q5Bars', questions.q5_kepuasan);
+                    // Render dynamic question cards
+                    renderQuestionsGrid(questionsList);
+
+                    // Render dynamic table headers
+                    renderTableHeaders(questionsList);
 
                     // Trend chart
                     renderTrendChart(data.trend);
+
+                    // Store questionsList globally for recent table
+                    window.dashboardQuestionsList = questionsList;
                 }
             } catch (error) {
                 console.error('Dashboard error:', error);
             }
         }
 
-        function renderQuestionBars(containerId, data) {
-            const container = document.getElementById(containerId);
-            const total = data.sangat_baik + data.cukup_baik + data.kurang_baik;
+        function renderQuestionsGrid(questionsList) {
+            const grid = document.getElementById('questionsGrid');
+            if (!questionsList || questionsList.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; padding: 30px; color: #6c757d;">Tidak ada pertanyaan aktif.</p>';
+                return;
+            }
 
+            grid.innerHTML = questionsList.map((q, index) => `
+                <div class="question-card">
+                    <h4>Q${index + 1}. ${q.text.replace(/\?$/, '').replace(/^Bagaimana /, '').replace(/^Secara keseluruhan, bagaimana /, '')}</h4>
+                    <div class="question-bars" id="qBars${index}"></div>
+                </div>
+            `).join('');
+
+            // Populate bars for each question
+            questionsList.forEach((q, index) => {
+                renderQuestionBars(`qBars${index}`, q.stats, q);
+            });
+        }
+
+        function renderTableHeaders(questionsList) {
+            const thead = document.getElementById('recentTableHead');
+            thead.innerHTML = '<th>Waktu</th>' + questionsList.map((q, i) => `<th>Q${i + 1}</th>`).join('');
+        }
+
+        function renderQuestionBars(containerId, data, question = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const total = data.sangat_baik + data.cukup_baik + data.kurang_baik;
             const getWidth = (value) => total > 0 ? Math.round((value / total) * 100) : 0;
+
+            // Use dynamic labels if question provided
+            const labelPositive = question?.option_positive || 'Sangat Baik';
+            const labelNeutral = question?.option_neutral || 'Cukup Baik';
+            const labelNegative = question?.option_negative || 'Kurang Baik';
 
             container.innerHTML = `
                 <div class="qbar-item">
                     <div class="qbar-label">
-                        <span>Sangat Baik</span>
+                        <span>${labelPositive}</span>
                         <span class="qbar-count">${data.sangat_baik}</span>
                     </div>
                     <div class="qbar-track">
@@ -339,7 +345,7 @@
                 </div>
                 <div class="qbar-item">
                     <div class="qbar-label">
-                        <span>Cukup Baik</span>
+                        <span>${labelNeutral}</span>
                         <span class="qbar-count">${data.cukup_baik}</span>
                     </div>
                     <div class="qbar-track">
@@ -348,7 +354,7 @@
                 </div>
                 <div class="qbar-item">
                     <div class="qbar-label">
-                        <span>Kurang Baik</span>
+                        <span>${labelNegative}</span>
                         <span class="qbar-count">${data.kurang_baik}</span>
                     </div>
                     <div class="qbar-track">
@@ -465,9 +471,7 @@
         // Heatmap loading
         async function loadHeatmap() {
             try {
-                const response = await fetch('/admin/api/heatmap', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await fetchWithAuth('/admin/api/heatmap');
                 const result = await response.json();
 
                 if (result.success) {

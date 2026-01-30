@@ -1264,16 +1264,19 @@ body {
 
 .heatmap-hours {
     display: flex;
-    gap: 2px;
     margin-bottom: 5px;
-    padding-left: 50px;
+    margin-left: 47px;
 }
 
 .heatmap-hours span {
-    width: 18px;
-    text-align: center;
-    font-size: 0.7rem;
+    width: 40px;
+    text-align: left;
+    font-size: 0.65rem;
     color: var(--admin-text-light);
+}
+
+.heatmap-hours span:first-child {
+    display: none;
 }
 
 .heatmap-grid {
@@ -1313,6 +1316,7 @@ body {
     align-items: center;
     gap: 8px;
     margin-top: 15px;
+    margin-left: 47px;
     font-size: 0.75rem;
     color: var(--admin-text-light);
 }
