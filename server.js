@@ -826,6 +826,15 @@ app.get('/api/questions', async (req, res) => {
     }
 });
 
+// Kiosk configuration (public - for auto-fullscreen)
+app.get('/api/kiosk-config', (req, res) => {
+    res.json({
+        success: true,
+        kioskDomain: process.env.KIOSK_DOMAIN || '',
+        fullscreenDelay: 3000 // 3 seconds
+    });
+});
+
 // Get all questions (admin - includes inactive)
 app.get('/admin/api/questions', authMiddleware, async (req, res) => {
     try {
