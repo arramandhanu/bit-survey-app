@@ -1419,3 +1419,102 @@ body {
     font-size: 0.9rem;
     color: var(--admin-text);
 }
+
+/* =====================================================
+   KIOSK TOOLS SECTION
+   ===================================================== */
+.kiosk-tools-section {
+    margin-bottom: 30px;
+}
+
+.kiosk-tools-section h2 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--admin-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.kiosk-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.tool-card {
+    background: var(--admin-white);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tool-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.tool-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-light) 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tool-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.tool-info {
+    flex: 1;
+}
+
+.tool-info h4 {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    color: var(--admin-text);
+}
+
+.tool-info p {
+    font-size: 0.8rem;
+    color: var(--admin-text-light);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.btn-tool {
+    background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-light) 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-tool:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 46, 92, 0.3);
+}
+
+.btn-tool:active {
+    transform: translateY(0);
+}
+
+.btn-tool.success {
+    background: var(--admin-green);
+}

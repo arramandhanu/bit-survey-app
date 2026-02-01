@@ -148,6 +148,58 @@
 
     <!-- JavaScript -->
     <script src="js/app.js"></script>
+    
+    <!-- Auto-Fullscreen for Kiosk Mode -->
+    <script>
+    (function() {
+        // Only run on kiosk page (not /admin paths)
+        if (window.location.pathname.startsWith('/admin')) {
+            return;
+        }
+
+        // Fetch kiosk config from server
+        fetch('/api/kiosk-config')
+            .then(res => res.json())
+            .then(config => {
+                if (!config.success || !config.kioskDomain) return;
+
+                // Check if current domain matches kiosk domain
+                const currentHost = window.location.hostname;
+                const kioskDomain = config.kioskDomain.replace(/^https?:\/\//, '');
+                
+                if (currentHost !== kioskDomain) return;
+
+                // Auto-fullscreen after delay
+                setTimeout(() => {
+                    requestFullscreen();
+                }, config.fullscreenDelay || 3000);
+            })
+            .catch(err => console.log('Kiosk config not available'));
+
+        function requestFullscreen() {
+            const elem = document.documentElement;
+            
+            if (document.fullscreenElement) return; // Already fullscreen
+            
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(e => {});
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+        }
+
+        // Also request fullscreen on first touch/click (for mobile)
+        let hasRequestedFullscreen = false;
+        document.addEventListener('click', function() {
+            if (!hasRequestedFullscreen && window.location.hostname === (window.kioskDomain || '')) {
+                requestFullscreen();
+                hasRequestedFullscreen = true;
+            }
+        }, { once: true });
+    })();
+    </script>
 </body>
 
 </html>
