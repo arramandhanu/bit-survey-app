@@ -15,6 +15,7 @@
     // State
     let currentStep = 'welcome';
     let answers = {};
+    let queueId = ''; // Store Queue ID
     let countdownTimer = null;
     let slideshowTimer = null;
     let currentSlide = 1;
@@ -54,9 +55,35 @@
         await loadQuestions();
 
         bindEvents();
+
         startSlideshow();
+        startClock(); // Start queue clock
         preloadImages();
         console.log('Kiosk Survey with Slideshow initialized');
+    }
+
+    /**
+     * Start the clock for queue page
+     */
+    function startClock() {
+        const timeEl = document.getElementById('queueDateTime');
+        if (!timeEl) return;
+
+        function update() {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            timeEl.textContent = now.toLocaleDateString('id-ID', options);
+        }
+
+        update();
+        setInterval(update, 10000); // Update every 10s is enough
     }
 
     /**
@@ -88,6 +115,12 @@
 
         container.innerHTML = questionsData.map((q, index) => `
             <section class="survey-step" id="step-${index + 1}">
+                ${index === 0 ? `
+                <button class="btn-back-home" type="button">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Kembali</span>
+                </button>
+                ` : ''}
                 <div class="step-content">
                     <h2 class="question-title">${q.question_text}</h2>
                     <p class="question-subtitle">${q.question_subtitle}</p>
@@ -109,6 +142,17 @@
                 </div>
             </section>
         `).join('');
+
+        // Attach event listener for back button
+        const backBtn = container.querySelector('.btn-back-home');
+        if (backBtn) {
+            addTapEvent(backBtn, function(e) {
+                // Prevent bubbling
+                e.stopPropagation();
+                // Reset to home
+                resetSurvey();
+            });
+        }
     }
 
     /**
@@ -201,6 +245,12 @@
         document.addEventListener('gesturestart', function (e) {
             e.preventDefault();
         });
+
+        // Queue Keypad Events
+        const keys = document.querySelectorAll('.virtual-keypad .key');
+        keys.forEach(key => {
+            addTapEvent(key, handleKeypadInput);
+        });
     }
 
     /* =====================================================
@@ -285,9 +335,11 @@
         if (surveyHeader) surveyHeader.classList.remove('hidden');
         if (surveyFooter) surveyFooter.classList.remove('hidden');
         if (progressBar) progressBar.classList.remove('hidden');
-        if (progressText) progressText.classList.remove('hidden');
+        if (surveyHeader) surveyHeader.classList.remove('hidden');
+        if (surveyFooter) surveyFooter.classList.remove('hidden');
 
-        goToStep(1);
+        // Go to Queue Input first
+        goToStep('queue');
     }
 
     /**
@@ -335,9 +387,9 @@
     function updateProgress(step) {
         if (!progressFill || !progressText) return;
 
-        if (step === 'welcome' || step === 'complete') {
+        if (step === 'welcome' || step === 'complete' || step === 'queue') {
             progressFill.style.width = step === 'complete' ? '100%' : '0%';
-            // Hide progress bar and text on welcome/complete
+            // Hide progress bar and text on welcome/complete/queue
             if (progressBar) progressBar.classList.add('hidden');
             if (progressText) progressText.classList.add('hidden');
         } else {
@@ -401,6 +453,7 @@
                 },
                 body: JSON.stringify({
                     questions: answers,
+                    queueId: queueId, // Send Queue ID
                     timestamp: new Date().toISOString()
                 }),
             });
@@ -415,6 +468,9 @@
         } catch (error) {
             console.error('Error submitting survey:', error);
         }
+
+        // Reset queueId
+        queueId = '';
 
         // Start countdown to restart
         startCountdown();
@@ -452,6 +508,8 @@
 
         // Reset answers
         answers = {};
+        queueId = '';
+        updateQueueDisplay();
         isTransitioning = false;
 
         // Reset all selected states
@@ -478,5 +536,67 @@
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
+    }
+
+    /**
+     * Handle Keypad Input
+     */
+    function handleKeypadInput(e) {
+        const btn = e.currentTarget;
+        const key = btn.dataset.key;
+        const action = btn.dataset.action;
+        const display = document.getElementById('queueInput');
+        const submitBtn = document.getElementById('submitQueueBtn');
+
+        if (action === 'submit') {
+            if (!queueId) return;
+            // Go to first question
+            if (progressBar) progressBar.classList.remove('hidden');
+            if (progressText) progressText.classList.remove('hidden');
+            goToStep(1);
+            return;
+        }
+
+        if (action === 'clear') {
+            queueId = '';
+        } else if (action === 'backspace') {
+            queueId = queueId.slice(0, -1);
+        } else if (key) {
+            // Limit length
+            if (queueId.length < 5) {
+                // Auto-append hyphen if it's a letter and first character
+                const isLetter = /^[A-E]$/.test(key);
+                if (queueId.length === 0 && isLetter) {
+                    queueId += key + '-';
+                } else {
+                    queueId += key;
+                }
+            }
+        }
+
+        updateQueueDisplay();
+
+        // Add button animation class
+        btn.classList.add('clicked');
+        setTimeout(() => btn.classList.remove('clicked'), 200);
+    }
+
+    function updateQueueDisplay() {
+        const display = document.getElementById('queueInput');
+        const submitBtn = document.getElementById('submitQueueBtn');
+
+        if (display) {
+            display.textContent = queueId;
+        }
+
+        if (submitBtn) {
+            if (queueId.length > 0) {
+                submitBtn.disabled = false;
+                submitBtn.classList.add('active');
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.classList.remove('active');
+            }
+        }
     }
 })();

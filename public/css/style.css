@@ -1234,85 +1234,285 @@ body {
 }
 
 /* =====================================================
-   ACCESSIBILITY IMPROVEMENTS
+   QUEUE INPUT SCREEN STYLES (PREMIUM COMPACT FIX)
    ===================================================== */
-
-/* Larger touch targets (min 48px) */
-.rating-option {
-    min-height: 180px;
-    min-width: 180px;
-    padding: 30px;
+.centered-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    padding-top: 120px;
+    /* Increased to 120px to clear header */
+    padding-bottom: 80px;
+    /* Safety padding for footer */
+    overflow-y: auto;
+    /* Allow Scroll if really too small */
 }
 
-/* Larger emoji icons */
-.option-emoji {
-    width: 100px;
-    height: 100px;
+.queue-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    /* Reduced gap */
+    margin-top: 0.5rem;
+    width: 100%;
+    max-width: 580px;
 }
 
-/* Higher contrast labels */
-.option-label {
-    font-size: 1.3rem;
+.queue-display-container {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.queue-date-display {
+    font-size: 1rem;
+    color: var(--color-text-light);
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.queue-input-display {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    height: 75px;
+    /* Reduced height */
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    /* Slightly smaller font */
+    font-weight: 800;
+    color: var(--color-primary-dark);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    letter-spacing: 4px;
+    transition: all 0.3s ease;
+}
+
+.queue-input-display:empty::before {
+    content: '_-_ _ _';
+    color: #e0e0e0;
+    font-weight: 300;
+    font-size: 2.5rem;
+    letter-spacing: 8px;
+}
+
+/* Virtual Keypad - Premium Grid */
+.virtual-keypad {
+    width: 100%;
+    background: white;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    padding: 20px;
+    /* Reduced padding */
+    border-radius: 25px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.keypad-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(4, 60px);
+    /* Reduced row height to 60px */
+    gap: 12px;
+    /* Reduced gap */
+}
+
+.key {
+    border: none;
+    border-radius: 14px;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 700;
-    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
 }
 
-.option-label.green {
-    color: #1e7e34;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+.key::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 60%);
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.3s ease;
 }
 
-.option-label.orange {
-    color: #c77b00;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+.key:active,
+.key.clicked {
+    transform: scale(0.95);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
 }
 
-.option-label.red {
-    color: #bd2130;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+.key.clicked::after {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
 }
 
-/* Larger question titles */
-.question-title {
-    font-size: 2.2rem;
-    line-height: 1.3;
+/* Letters - Brand Blue */
+.key.letter {
+    background: #0f3460;
+    color: white;
+    box-shadow: 0 4px 15px rgba(15, 52, 96, 0.2);
 }
 
-/* Focus indicators for accessibility */
-.rating-option:focus-visible {
-    outline: 4px solid var(--color-primary-dark);
-    outline-offset: 4px;
+/* Numbers - Clean White */
+.key.num {
+    background: #f8f9fa;
+    color: #2d3436;
+    border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-    .rating-option {
-        border-width: 3px;
+/* Backspace - Soft Gray */
+.key.action-backspace {
+    background: #edf2f7;
+    color: #718096;
+}
+
+/* Submit Action Bar */
+.key.action-submit {
+    grid-column: 5;
+    grid-row: 1 / span 4;
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    pointer-events: none;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 10px 20px rgba(56, 239, 125, 0.2);
+    border-radius: 14px;
+    text-transform: uppercase;
+    justify-content: center;
+}
+
+.key.action-submit i {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.key.action-submit.active {
+    opacity: 1;
+    pointer-events: auto;
+    box-shadow: 0 15px 30px rgba(56, 239, 125, 0.3);
+    transform: translateY(0);
+}
+
+.key.action-submit.active:active {
+    transform: scale(0.96);
+}
+
+/* Landscape adjustments */
+@media (max-height: 700px) {
+    .centered-content {
+        justify-content: flex-start;
+        /* Start from top to avoid center clipping */
+        padding-top: 80px;
+        /* Safe padding for header */
     }
 
-    .option-label {
-        font-weight: 800;
+    .queue-wrapper {
+        margin-top: 0;
+        flex-direction: row;
+        align-items: flex-start;
+        max-width: 800px;
+        gap: 30px;
+    }
+
+    .queue-display-container {
+        text-align: left;
+        flex: 1;
+        margin-top: 20px;
+    }
+
+    .virtual-keypad {
+        flex: 1.2;
+        padding: 15px;
+    }
+
+    .keypad-grid {
+        gap: 8px;
+        grid-template-rows: repeat(4, 50px);
+    }
+
+    .key {
+        font-size: 1.2rem;
+    }
+
+    .queue-input-display {
+        height: 60px;
+        font-size: 2.5rem;
     }
 }
 
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
+/* =====================================================
+   BACK BUTTON STYLES (Phase 7)
+   ===================================================== */
+.btn-back-home {
+    position: absolute;
+    top: 110px;
+    /* Below fixed header (80px) + spacing */
+    left: 40px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border: 2px solid var(--color-primary-dark);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    color: var(--color-primary-dark);
+    font-weight: 700;
+    font-family: var(--font-family);
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
-    .confetti,
-    .icon-line,
-    .check-icon::after {
-        animation: none;
-    }
+.btn-back-home i {
+    font-size: 1.2rem;
+}
 
-    .icon-line.line-tip {
-        width: 25px;
-        left: 24px;
-        top: 56px;
-    }
+.btn-back-home:hover {
+    transform: translateX(-5px);
+    background: var(--color-primary-dark);
+    color: white;
+    box-shadow: 0 8px 25px rgba(15, 46, 92, 0.2);
+}
 
-    .icon-line.line-long {
-        width: 50px;
-        right: 18px;
-        top: 48px;
+.btn-back-home:active {
+    transform: scale(0.95);
+}
+
+/* Landscape Mobile Fix */
+@media (max-width: 768px) {
+    .btn-back-home {
+        top: 90px;
+        left: 20px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
     }
 }

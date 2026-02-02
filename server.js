@@ -286,7 +286,7 @@ app.get('/api/session', (req, res) => {
 
 // Submit survey (from kiosk) - PROTECTED with session token
 app.post('/api/survey', sessionMiddleware, async (req, res) => {
-    const { questions } = req.body;
+    const { questions, queueId } = req.body; // Extract queueId
 
     if (!questions || typeof questions !== 'object') {
         return res.status(400).json({
@@ -301,8 +301,8 @@ app.post('/api/survey', sessionMiddleware, async (req, res) => {
 
     try {
         const [result] = await pool.query(
-            `INSERT INTO surveys (q1_kecepatan, q2_keramahan, q3_kejelasan, q4_fasilitas, q5_kepuasan, user_agent, ip_address)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO surveys (q1_kecepatan, q2_keramahan, q3_kejelasan, q4_fasilitas, q5_kepuasan, user_agent, ip_address, queue_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 questions.q1 || null,
                 questions.q2 || null,
@@ -310,7 +310,8 @@ app.post('/api/survey', sessionMiddleware, async (req, res) => {
                 questions.q4 || null,
                 questions.q5 || null,
                 userAgent,
-                ipAddress
+                ipAddress,
+                queueId || null // Save queueId
             ]
         );
 
