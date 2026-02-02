@@ -12,6 +12,7 @@ DOCKER_USERNAME="${DOCKER_USERNAME:-aryaramandhanu}"
 IMAGE_NAME="${IMAGE_NAME:-bit-survey-app}"
 DOCKERFILE_PATH="${DOCKERFILE_PATH:-.}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
+APP_SERVICE="${APP_SERVICE:-survey-app}"   # <--- only update this service
 
 # Colors for output
 RED='\033[0;31m'
@@ -47,12 +48,9 @@ echo -e "Git SHA:    ${GREEN}${GIT_SHA}${NC}"
 echo -e "Full SHA:   ${GIT_SHA_FULL}"
 echo ""
 
-# Check if logged in to Docker Hub
-if ! docker info 2>/dev/null | grep -q "Username"; then
-    echo -e "${RED}Error: Not logged in to Docker Hub${NC}"
-    echo "Please run: docker login"
-    exit 1
-fi
+# NOTE:
+# Do NOT pre-check docker login (not reliable across credential helpers).
+# If push fails due to auth, docker will return an error and you can run `docker login`.
 
 # Build the image
 echo -e "${YELLOW}Building Docker image...${NC}"
@@ -97,5 +95,17 @@ echo ""
 echo -e "Pull command:"
 echo -e "  docker pull ${FULL_IMAGE}:${TAG}"
 echo ""
-echo -e "Deploy command:"
-echo -e "  docker compose pull && docker compose up -d"
+echo -e "Deploy command (update ONLY app, DB untouched):"
+echo ""
+
+# Deploy command rules:
+# - prod (latest): always pull app
+# - dev (sha): pull app only if image not present locally
+if [ "$ENV" = "prod" ]; then
+    echo -e "  docker compose -f ${COMPOSE_FILE} pull ${APP_SERVICE} && \\"
+else
+    echo -e "  docker image inspect ${FULL_IMAGE}:${TAG} >/dev/null 2>&1 || docker compose -f ${COMPOSE_FILE} pull ${APP_SERVICE} && \\"
+fi
+
+echo -e "  docker compose -f ${COMPOSE_FILE} up -d --no-deps --force-recreate ${APP_SERVICE}"
+echo ""

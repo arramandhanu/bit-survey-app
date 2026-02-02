@@ -1415,6 +1415,10 @@ app.get('/admin/questions', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'questions.html'));
 });
 
+app.get('/admin/konfigurasi', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin', 'konfigurasi.html'));
+});
+
 // =====================================================
 // START SERVER
 // =====================================================

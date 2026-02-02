@@ -1518,3 +1518,43 @@ body {
 .btn-tool.success {
     background: var(--admin-green);
 }
+
+/* Settings Card */
+.settings-card {
+    background: var(--admin-white);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-info h4 {
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+    color: var(--admin-text);
+}
+
+.setting-info p {
+    font-size: 0.8rem;
+    color: var(--admin-text-light);
+}
+
+.setting-value {
+    background: #F0F4F8;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--admin-primary);
+}

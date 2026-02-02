@@ -148,57 +148,129 @@
 
     <!-- JavaScript -->
     <script src="js/app.js"></script>
-    
+
     <!-- Auto-Fullscreen for Kiosk Mode -->
     <script>
-    (function() {
-        // Only run on kiosk page (not /admin paths)
-        if (window.location.pathname.startsWith('/admin')) {
-            return;
-        }
+        (function () {
+            // Only run on kiosk page (not /admin paths)
+            if (window.location.pathname.startsWith('/admin')) {
+                return;
+            }
 
-        // Fetch kiosk config from server
-        fetch('/api/kiosk-config')
-            .then(res => res.json())
-            .then(config => {
-                if (!config.success || !config.kioskDomain) return;
+            let kioskDomain = '';
+            let fullscreenDelay = 3000;
+            let isKioskMode = false;
 
-                // Check if current domain matches kiosk domain
-                const currentHost = window.location.hostname;
-                const kioskDomain = config.kioskDomain.replace(/^https?:\/\//, '');
-                
-                if (currentHost !== kioskDomain) return;
+            // Fetch kiosk config from server
+            fetch('/api/kiosk-config')
+                .then(res => res.json())
+                .then(config => {
+                    if (!config.success) return;
 
-                // Auto-fullscreen after delay
+                    kioskDomain = (config.kioskDomain || '').replace(/^https?:\/\//, '');
+                    fullscreenDelay = config.fullscreenDelay || 3000;
+
+                    // Check if current domain matches kiosk domain
+                    const currentHost = window.location.hostname;
+                    isKioskMode = (currentHost === kioskDomain);
+
+                    if (isKioskMode) {
+                        // Show fullscreen prompt overlay
+                        showFullscreenPrompt();
+                    }
+                })
+                .catch(err => console.log('Kiosk config not available'));
+
+            function requestFullscreen() {
+                const elem = document.documentElement;
+
+                if (document.fullscreenElement) return true; // Already fullscreen
+
+                try {
+                    if (elem.requestFullscreen) {
+                        elem.requestFullscreen();
+                        return true;
+                    } else if (elem.webkitRequestFullscreen) {
+                        elem.webkitRequestFullscreen();
+                        return true;
+                    } else if (elem.msRequestFullscreen) {
+                        elem.msRequestFullscreen();
+                        return true;
+                    }
+                } catch (e) {
+                    console.log('Fullscreen request failed:', e);
+                }
+                return false;
+            }
+
+            function showFullscreenPrompt() {
+                // Create prompt overlay
+                const overlay = document.createElement('div');
+                overlay.id = 'fullscreen-prompt';
+                overlay.innerHTML = `
+                <div style="
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(15, 46, 92, 0.95); z-index: 99999;
+                    display: flex; flex-direction: column; align-items: center; justify-content: center;
+                    color: white; font-family: 'Montserrat', sans-serif; text-align: center;
+                    cursor: pointer;
+                " onclick="enterFullscreen()">
+                    <i class="fas fa-expand" style="font-size: 80px; margin-bottom: 30px; animation: pulse 1.5s infinite;"></i>
+                    <h2 style="font-size: 2rem; margin-bottom: 15px;">Sentuh untuk Fullscreen</h2>
+                    <p style="font-size: 1.1rem; opacity: 0.8;">Tap anywhere to enter fullscreen mode</p>
+                </div>
+            `;
+                document.body.appendChild(overlay);
+
+                // Add animation style
+                const style = document.createElement('style');
+                style.textContent = `
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.1); opacity: 0.8; }
+                }
+            `;
+                document.head.appendChild(style);
+
+                // Auto-hide after delay if not clicked
                 setTimeout(() => {
+                    const prompt = document.getElementById('fullscreen-prompt');
+                    if (prompt && !document.fullscreenElement) {
+                        prompt.style.opacity = '0.7';
+                    }
+                }, fullscreenDelay);
+            }
+
+            // Global function that can be called from onclick
+            window.enterFullscreen = function () {
+                if (requestFullscreen()) {
+                    const prompt = document.getElementById('fullscreen-prompt');
+                    if (prompt) {
+                        prompt.remove();
+                    }
+                }
+            };
+
+            // Also handle first touch/click on the page
+            document.addEventListener('click', function fullscreenHandler() {
+                if (isKioskMode && !document.fullscreenElement) {
                     requestFullscreen();
-                }, config.fullscreenDelay || 3000);
-            })
-            .catch(err => console.log('Kiosk config not available'));
+                    const prompt = document.getElementById('fullscreen-prompt');
+                    if (prompt) {
+                        prompt.remove();
+                    }
+                }
+                document.removeEventListener('click', fullscreenHandler);
+            }, { once: true });
 
-        function requestFullscreen() {
-            const elem = document.documentElement;
-            
-            if (document.fullscreenElement) return; // Already fullscreen
-            
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen().catch(e => {});
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen();
-            }
-        }
-
-        // Also request fullscreen on first touch/click (for mobile)
-        let hasRequestedFullscreen = false;
-        document.addEventListener('click', function() {
-            if (!hasRequestedFullscreen && window.location.hostname === (window.kioskDomain || '')) {
-                requestFullscreen();
-                hasRequestedFullscreen = true;
-            }
-        }, { once: true });
-    })();
+            // Handle fullscreen change
+            document.addEventListener('fullscreenchange', () => {
+                const prompt = document.getElementById('fullscreen-prompt');
+                if (document.fullscreenElement && prompt) {
+                    prompt.remove();
+                }
+            });
+        })();
     </script>
 </body>
 

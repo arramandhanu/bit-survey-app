@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfigurasi - Survey BKPM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="https://bkpm.go.id/storage/image/origin/webp/DJxv8PiuraU0FdxuEMAR1svWtdBu0y.webp" alt="Logo"
+                class="sidebar-logo">
+            <h2>Survey Administrator</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard" class="nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/admin/reports" class="nav-item">
+                <i class="fas fa-file-lines"></i>
+                <span>Laporan</span>
+            </a>
+            <a href="/admin/logs" class="nav-item">
+                <i class="fas fa-history"></i>
+                <span>Audit Log</span>
+            </a>
+            <a href="/admin/questions" class="nav-item">
+                <i class="fas fa-question-circle"></i>
+                <span>Pertanyaan</span>
+            </a>
+            <a href="/admin/konfigurasi" class="nav-item active">
+                <i class="fas fa-cog"></i>
+                <span>Konfigurasi</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="userName">Admin</span>
+            </div>
+            <button class="btn-logout" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                Keluar
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="content-header">
+            <h1>Konfigurasi</h1>
+            <p class="date-display">Pengaturan Kiosk & Sistem</p>
+        </header>
+
+        <!-- Kiosk Tools Section -->
+        <div class="kiosk-tools-section">
+            <h2><i class="fas fa-desktop"></i> Kiosk Tools</h2>
+            <div class="kiosk-tools-grid">
+                <div class="tool-card">
+                    <div class="tool-icon">
+                        <i class="fab fa-windows"></i>
+                    </div>
+                    <div class="tool-info">
+                        <h4>Windows Shortcut</h4>
+                        <p>Download desktop shortcut untuk membuka kiosk di Chrome (Kiosk Mode)</p>
+                        <button class="btn-tool" id="downloadShortcut">
+                            <i class="fas fa-download"></i> Download Shortcut
+                        </button>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">
+                        <i class="fas fa-power-off"></i>
+                    </div>
+                    <div class="tool-info">
+                        <h4>Auto-Start Script</h4>
+                        <p>Download batch script untuk otomatis buka kiosk saat Windows startup</p>
+                        <button class="btn-tool" id="downloadStartup">
+                            <i class="fas fa-download"></i> Download Startup Script
+                        </button>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">
+                        <i class="fas fa-copy"></i>
+                    </div>
+                    <div class="tool-info">
+                        <h4>Kiosk URL</h4>
+                        <p id="kioskUrlDisplay">Loading...</p>
+                        <button class="btn-tool" id="copyKioskUrl">
+                            <i class="fas fa-copy"></i> Copy URL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fullscreen Test Section -->
+        <div class="kiosk-tools-section">
+            <h2><i class="fas fa-expand"></i> Fullscreen Test</h2>
+            <div class="kiosk-tools-grid">
+                <div class="tool-card">
+                    <div class="tool-icon">
+                        <i class="fas fa-external-link-alt"></i>
+                    </div>
+                    <div class="tool-info">
+                        <h4>Buka Kiosk Fullscreen</h4>
+                        <p>Buka halaman kiosk di tab baru dengan mode fullscreen</p>
+                        <button class="btn-tool" id="openKioskFullscreen">
+                            <i class="fas fa-expand"></i> Buka Fullscreen
+                        </button>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="tool-info">
+                        <h4>Petunjuk Penggunaan</h4>
+                        <p>1. Download dan jalankan Startup Script sekali<br>
+                            2. Script akan auto-install ke folder Startup<br>
+                            3. Restart Windows untuk test auto-start</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kiosk Settings Section -->
+        <div class="kiosk-tools-section">
+            <h2><i class="fas fa-sliders-h"></i> Pengaturan Kiosk</h2>
+            <div class="settings-card">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Auto Fullscreen Delay</h4>
+                        <p>Waktu tunggu sebelum halaman kiosk masuk mode fullscreen otomatis</p>
+                    </div>
+                    <div class="setting-value">
+                        <span id="fullscreenDelay">3 detik</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Kiosk Domain</h4>
+                        <p>Domain yang digunakan untuk mode kiosk (konfigurasi di .env)</p>
+                    </div>
+                    <div class="setting-value">
+                        <span id="kioskDomain">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Check authentication
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+            window.location.href = '/admin/login';
+        }
+
+        // Logout handler
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('adminToken');
+            window.location.href = '/admin/login';
+        });
+
+        // =====================================================
+        // KIOSK TOOLS HANDLERS
+        // =====================================================
+
+        let kioskUrl = '';
+
+        // Load kiosk config
+        fetch('/api/kiosk-config')
+            .then(res => res.json())
+            .then(config => {
+                if (config.success && config.kioskDomain) {
+                    kioskUrl = `https://${config.kioskDomain}`;
+                    document.getElementById('kioskDomain').textContent = config.kioskDomain;
+                } else {
+                    kioskUrl = window.location.origin;
+                    document.getElementById('kioskDomain').textContent = window.location.hostname;
+                }
+                document.getElementById('kioskUrlDisplay').textContent = kioskUrl;
+                document.getElementById('fullscreenDelay').textContent = `${(config.fullscreenDelay || 3000) / 1000} detik`;
+            })
+            .catch(() => {
+                kioskUrl = window.location.origin;
+                document.getElementById('kioskUrlDisplay').textContent = kioskUrl;
+                document.getElementById('kioskDomain').textContent = window.location.hostname;
+            });
+
+        // Download Windows Shortcut (.url file)
+        document.getElementById('downloadShortcut').addEventListener('click', () => {
+            const content = `[InternetShortcut]
+URL=${kioskUrl}
+IconIndex=0
+`;
+            downloadFile('Survey-Kiosk-BKPM.url', content);
+            showToast('Shortcut downloaded! Letakkan di Desktop.', 'success');
+        });
+
+        // Download Auto-Start Script (.bat file)
+        document.getElementById('downloadStartup').addEventListener('click', () => {
+            const batContent = `@echo off
+REM =====================================================
+REM BKPM Survey Kiosk - Auto Start Full Screen Script
+REM Run this once to install to Startup folder
+REM =====================================================
+
+REM Define startup folder and script name
+set "STARTUP_FOLDER=%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+set "SCRIPT_NAME=BKPM-Kiosk-Startup.bat"
+set "KIOSK_URL=${kioskUrl}"
+
+REM Check if already in Startup folder
+if "%~dp0"=="%STARTUP_FOLDER%\\" goto :RUN_KIOSK
+
+REM Not in Startup - copy self to Startup folder
+echo =====================================================
+echo   BKPM Survey Kiosk - Installer
+echo =====================================================
+echo.
+echo Installing to Windows Startup folder...
+copy "%~f0" "%STARTUP_FOLDER%\\%SCRIPT_NAME%" >nul 2>&1
+
+if %errorlevel%==0 (
+    echo.
+    echo [SUCCESS] Installed successfully!
+    echo.
+    echo The kiosk will now start automatically when Windows boots.
+    echo.
+    echo Starting kiosk now...
+    timeout /t 3 /nobreak >nul
+    goto :RUN_KIOSK
+) else (
+    echo.
+    echo [ERROR] Failed to install. Please run as Administrator.
+    pause
+    exit /b 1
+)
+
+:RUN_KIOSK
+REM Wait for network to be ready (only on boot)
+if not "%~dp0"=="%STARTUP_FOLDER%\\" goto :LAUNCH_BROWSER
+timeout /t 10 /nobreak >nul
+
+:LAUNCH_BROWSER
+REM Chrome kiosk flags for TRUE fullscreen
+set CHROME_FLAGS=--kiosk --start-fullscreen --start-maximized --disable-infobars --disable-session-crashed-bubble --disable-translate --no-first-run --noerrdialogs --disable-features=TranslateUI --app="%KIOSK_URL%"
+
+REM Edge kiosk flags
+set EDGE_FLAGS=--kiosk --start-fullscreen --start-maximized --disable-infobars --no-first-run --noerrdialogs --app="%KIOSK_URL%"
+
+REM Try Chrome first
+if exist "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" (
+    start "" "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" %CHROME_FLAGS%
+    exit /b 0
+)
+
+if exist "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" (
+    start "" "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" %CHROME_FLAGS%
+    exit /b 0
+)
+
+REM Try Microsoft Edge
+if exist "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" (
+    start "" "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" %EDGE_FLAGS%
+    exit /b 0
+)
+
+if exist "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe" (
+    start "" "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe" %EDGE_FLAGS%
+    exit /b 0
+)
+
+REM Fallback to default browser
+start "" "%KIOSK_URL%"
+`;
+            downloadFile('BKPM-Kiosk-Startup.bat', batContent);
+            showToast('Script downloaded! Jalankan sekali untuk install otomatis ke Startup.', 'success');
+        });
+
+        // Copy Kiosk URL
+        document.getElementById('copyKioskUrl').addEventListener('click', () => {
+            navigator.clipboard.writeText(kioskUrl).then(() => {
+                const btn = document.getElementById('copyKioskUrl');
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-copy"></i> Copy URL';
+                    btn.classList.remove('success');
+                }, 2000);
+            });
+        });
+
+        // Open Kiosk in Fullscreen
+        document.getElementById('openKioskFullscreen').addEventListener('click', () => {
+            const kioskWindow = window.open(kioskUrl, '_blank');
+            if (kioskWindow) {
+                // Try to request fullscreen after a short delay
+                setTimeout(() => {
+                    try {
+                        if (kioskWindow.document.documentElement.requestFullscreen) {
+                            kioskWindow.document.documentElement.requestFullscreen();
+                        }
+                    } catch (e) {
+                        console.log('Fullscreen request failed - user needs to click on the page');
+                    }
+                }, 1000);
+                showToast('Kiosk dibuka di tab baru. Klik pada halaman untuk aktivasi fullscreen.', 'info');
+            }
+        });
+
+        // Helper: Download file
+        function downloadFile(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Helper: Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}`;
+            toast.style.cssText = `
+                position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+                background: ${type === 'success' ? '#28a745' : '#0F2E5C'}; color: white;
+                padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                display: flex; align-items: center; gap: 10px; font-size: 0.9rem;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+
+</html>
