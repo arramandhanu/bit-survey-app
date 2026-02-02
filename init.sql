@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS surveys (
     q5_kepuasan ENUM('sangat_baik', 'cukup_baik', 'kurang_baik') NULL,
     user_agent VARCHAR(500) NULL,
     ip_address VARCHAR(45) NULL,
+    queue_id VARCHAR(50) NULL COMMENT 'Nomor Antrian (e.g., A-123)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     -- Indexes for reporting

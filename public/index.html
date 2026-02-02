@@ -91,6 +91,56 @@
         </div>
     </section>
 
+    <!-- Queue ID Input Screen -->
+    <section class="survey-step" id="step-queue">
+        <div class="step-content centered-content">
+            <h2 class="question-title">Masukkan Nomor Antrian Untuk Melanjutkan</h2>
+
+            <div class="queue-wrapper">
+                <div class="queue-display-container">
+                    <div class="queue-date-display">
+                        <i class="far fa-clock"></i> <span id="queueDateTime">-</span>
+                    </div>
+                    <div class="queue-input-display" id="queueInput"></div>
+                </div>
+
+                <div class="virtual-keypad">
+                    <div class="keypad-grid">
+                        <!-- Row 1 -->
+                        <button class="key letter" data-key="A">A</button>
+                        <button class="key num" data-key="1">1</button>
+                        <button class="key num" data-key="2">2</button>
+                        <button class="key num" data-key="3">3</button>
+                        <!-- Submit Button (Spans 4 rows) -->
+                        <button class="key action-submit" id="submitQueueBtn" data-action="submit" disabled>
+                            Lanjut <br><i class="fas fa-chevron-right"></i>
+                        </button>
+
+                        <!-- Row 2 -->
+                        <button class="key letter" data-key="B">B</button>
+                        <button class="key num" data-key="4">4</button>
+                        <button class="key num" data-key="5">5</button>
+                        <button class="key num" data-key="6">6</button>
+
+                        <!-- Row 3 -->
+                        <button class="key letter" data-key="C">C</button>
+                        <button class="key num" data-key="7">7</button>
+                        <button class="key num" data-key="8">8</button>
+                        <button class="key num" data-key="9">9</button>
+
+                        <!-- Row 4 -->
+                        <button class="key letter" data-key="D">D</button>
+                        <button class="key letter" data-key="E">E</button>
+                        <button class="key num" data-key="0">0</button>
+                        <button class="key action-backspace" data-action="backspace">
+                            <i class="fas fa-backspace"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Header (Hidden on welcome, shown during survey) -->
     <header class="header hidden" id="surveyHeader">
         <nav class="navbar">
