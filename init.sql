@@ -131,8 +131,7 @@ INSERT INTO questions (question_key, question_text, option_positive, option_neut
 ('q1', 'Bagaimana kecepatan pelayanan kami?', 'SANGAT CEPAT', 'CUKUP CEPAT', 'KURANG CEPAT', 1),
 ('q2', 'Bagaimana keramahan petugas kami?', 'SANGAT RAMAH', 'CUKUP RAMAH', 'KURANG RAMAH', 2),
 ('q3', 'Bagaimana kejelasan informasi yang diberikan?', 'SANGAT JELAS', 'CUKUP JELAS', 'KURANG JELAS', 3),
-('q4', 'Bagaimana kondisi fasilitas kami?', 'SANGAT BAIK', 'CUKUP BAIK', 'KURANG BAIK', 4),
-('q5', 'Secara keseluruhan, bagaimana kepuasan Anda?', 'SANGAT PUAS', 'CUKUP PUAS', 'KURANG PUAS', 5)
+('q4', 'Bagaimana kondisi fasilitas kami?', 'SANGAT BAIK', 'CUKUP BAIK', 'KURANG BAIK', 4)
 ON DUPLICATE KEY UPDATE 
     question_text = VALUES(question_text),
     option_positive = VALUES(option_positive),
