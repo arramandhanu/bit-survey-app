@@ -224,7 +224,11 @@
                     const currentHost = window.location.hostname;
                     isKioskMode = (currentHost === kioskDomain);
 
-                    if (isKioskMode) {
+                    // Also check for fullscreen URL parameter (from admin Konfigurasi page)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const hasFullscreenParam = urlParams.get('fullscreen') === '1';
+
+                    if (isKioskMode || hasFullscreenParam) {
                         // Show fullscreen prompt overlay
                         showFullscreenPrompt();
                     }
