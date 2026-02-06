@@ -306,20 +306,10 @@ start "" "%KIOSK_URL%"
 
         // Open Kiosk in Fullscreen
         document.getElementById('openKioskFullscreen').addEventListener('click', () => {
-            const kioskWindow = window.open(kioskUrl, '_blank');
-            if (kioskWindow) {
-                // Try to request fullscreen after a short delay
-                setTimeout(() => {
-                    try {
-                        if (kioskWindow.document.documentElement.requestFullscreen) {
-                            kioskWindow.document.documentElement.requestFullscreen();
-                        }
-                    } catch (e) {
-                        console.log('Fullscreen request failed - user needs to click on the page');
-                    }
-                }, 1000);
-                showToast('Kiosk dibuka di tab baru. Klik pada halaman untuk aktivasi fullscreen.', 'info');
-            }
+            // Navigate directly to kiosk with fullscreen parameter
+            // The kiosk page will handle the fullscreen request on user click
+            const fullscreenUrl = kioskUrl + (kioskUrl.includes('?') ? '&' : '?') + 'fullscreen=1';
+            window.location.href = fullscreenUrl;
         });
 
         // Helper: Download file

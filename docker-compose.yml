@@ -3,7 +3,7 @@ services:
   # Survey Application
   # =====================================================
   survey-app:
-    image: aryaramandhanu/bit-survey-app:f86bcbd
+    image: aryaramandhanu/bit-survey-app:latest
     container_name: survey-app
     restart: unless-stopped
     ports:

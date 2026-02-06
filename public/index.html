@@ -150,7 +150,7 @@
             </div>
             <div class="navbar-divider"></div>
             <div class="navbar-text">
-                <h1 class="institution-name">KEMENTERIAN INVESTASI / BKPM</h1>
+                <h1 class="institution-name">KEMENTERIAN INVESTASI DAN HILIRISASI/BKPM</h1>
                 <p class="institution-subtitle">Pelayanan Perizinan Berusaha Terintegrasi Secara Elektronik</p>
             </div>
         </nav>
@@ -224,7 +224,11 @@
                     const currentHost = window.location.hostname;
                     isKioskMode = (currentHost === kioskDomain);
 
-                    if (isKioskMode) {
+                    // Also check for fullscreen URL parameter (from admin Konfigurasi page)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const hasFullscreenParam = urlParams.get('fullscreen') === '1';
+
+                    if (isKioskMode || hasFullscreenParam) {
                         // Show fullscreen prompt overlay
                         showFullscreenPrompt();
                     }

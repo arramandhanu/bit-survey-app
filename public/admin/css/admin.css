@@ -63,7 +63,6 @@ body {
 
 .login-logo {
     height: 60px;
-    filter: brightness(0) invert(1);
     margin-bottom: 15px;
 }
 
@@ -183,7 +182,6 @@ body {
 
 .sidebar-logo {
     height: 50px;
-    filter: brightness(0) invert(1);
     margin-bottom: 10px;
 }
 

@@ -895,8 +895,7 @@ app.post('/admin/api/questions/reset', authMiddleware, async (req, res) => {
         { key: 'q1', text: 'Bagaimana kecepatan pelayanan kami?', positive: 'SANGAT CEPAT', neutral: 'CUKUP CEPAT', negative: 'KURANG CEPAT' },
         { key: 'q2', text: 'Bagaimana keramahan petugas kami?', positive: 'SANGAT RAMAH', neutral: 'CUKUP RAMAH', negative: 'KURANG RAMAH' },
         { key: 'q3', text: 'Bagaimana kejelasan informasi yang diberikan?', positive: 'SANGAT JELAS', neutral: 'CUKUP JELAS', negative: 'KURANG JELAS' },
-        { key: 'q4', text: 'Bagaimana kondisi fasilitas kami?', positive: 'SANGAT BAIK', neutral: 'CUKUP BAIK', negative: 'KURANG BAIK' },
-        { key: 'q5', text: 'Secara keseluruhan, bagaimana kepuasan Anda?', positive: 'SANGAT PUAS', neutral: 'CUKUP PUAS', negative: 'KURANG PUAS' }
+        { key: 'q4', text: 'Bagaimana kondisi fasilitas kami?', positive: 'SANGAT BAIK', neutral: 'CUKUP BAIK', negative: 'KURANG BAIK' }
     ];
 
     try {
